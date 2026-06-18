@@ -1,1 +1,65 @@
-# Apex-bot
+# 🤖 APEX AI Options Bot — Groww API Edition
+
+## Setup in 5 Steps
+
+### 1. Install dependencies
+```
+pip install -r requirements.txt
+```
+
+### 2. Get Groww API credentials
+- Go to: https://groww.in/trade-api/api-keys
+- Subscribe: ₹499/month at groww.in/user/profile/trading-apis
+- Click "Generate TOTP token" (recommended — no daily expiry)
+- Copy TOTP Token and TOTP Secret
+
+### 3. Fill config.yaml
+```yaml
+groww_totp_token: "your_token_here"
+groww_totp_secret: "your_secret_here"
+telegram_token: "your_telegram_bot_token"
+telegram_chat_id: "your_chat_id"
+total_capital: 10000.0
+paper_trading: true       ← Keep true until satisfied with results
+```
+
+### 4. Test connection
+```
+python data/groww_migration_guide.py
+```
+
+### 5. Run the bot
+```
+python main.py
+```
+Dashboard available at: http://localhost:8000
+
+## File Structure
+```
+optionsbot/
+├── main.py                    ← Entry point
+├── config.yaml                ← Your credentials + settings
+├── core/
+│   ├── bot_engine.py          ← Central orchestrator
+│   ├── regime_classifier.py   ← Market regime detection
+│   ├── risk_guard.py          ← Capital protection
+│   └── config.py              ← Config loader
+├── data/
+│   ├── groww_broker.py        ← Groww API adapter (NEW)
+│   ├── indicators.py          ← Technical indicators
+│   └── groww_migration_guide.py
+├── strategies/
+│   └── strategy_engine.py     ← All 11 strategies + voting
+├── db/
+│   └── database.py            ← SQLite trade history
+├── backtest/
+│   └── backtester.py          ← Walk-forward backtester
+├── alerts/
+│   └── telegram_alert.py      ← Telegram notifications
+└── api/
+    └── dashboard_api.py       ← FastAPI REST backend
+```
+
+## Paper Trading First!
+Run paper_trading: true for at least 1 month.
+Only enable auto_trade: true after consistent profitable results.
