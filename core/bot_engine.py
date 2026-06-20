@@ -11,7 +11,8 @@ from typing import Dict, Optional, List
 from core.config import Config
 from core.regime_classifier import MarketRegimeClassifier
 from core.risk_guard import RiskGuard
-from data.groww_broker import GrowwBroker
+from data.angelone_broker import AngelOneBroker
+# from data.groww_broker import GrowwBroker
 from strategies.strategy_engine import StrategyEngine, BUY_CE, BUY_PE, NO_TRADE
 from db.database import Database
 from alerts.telegram_alert import TelegramAlerter
@@ -25,13 +26,9 @@ class BotEngine:
         self.db = db
         self.alerter = alerter
 
-        # Initialize GrowwBroker with paper trading enabled
-        self.broker = GrowwBroker(
-            api_key=config.groww_totp_token or config.groww_api_key,
-            api_secret=config.groww_api_secret or None,
-            totp_secret=config.groww_totp_secret or None,
-            paper_trading=config.paper_trading
-        )
+        # Initialize AngelOneBroker with paper trading enabled
+        self.broker = AngelOneBroker(paper_trading=config.paper_trading)
+        
         self.regime_classifier = MarketRegimeClassifier()
         self.strategy_engine = StrategyEngine(config.strategy_weights)
         self.risk_guard = RiskGuard(config, db)
@@ -50,43 +47,43 @@ class BotEngine:
     # ── Lifecycle ─────────────────────────────────────────────────────────────
     def pre_market_analysis(self):
         logger.info("🌅 Pre-market analysis starting...")
-        logger.debug("[PRE_MARKET] Fetching India VIX...")
+        logger.info("[PRE_MARKET] Fetching India VIX...")
         try:
             vix = self.broker.get_india_vix()
             vix_display = f"{vix:.2f}" if vix else "N/A"
             if vix:
-                logger.debug(f"[PRE_MARKET] VIX fetched: {vix:.2f}")
+                logger.info(f"[PRE_MARKET] VIX fetched: {vix:.2f}")
                 logger.info(f"[PRE_MARKET] India VIX: {vix:.2f}")
                 self.db.log_regime({"timestamp": str(datetime.now()), "instrument": "VIX",
                                     "regime": "PRE_MARKET", "vix": vix, "confidence": 0})
-                logger.debug(f"[PRE_MARKET] VIX logged to database")
+                logger.info(f"[PRE_MARKET] VIX logged to database")
             else:
-                logger.debug(f"[PRE_MARKET] VIX fetch returned None")
+                logger.info(f"[PRE_MARKET] VIX fetch returned None")
             self.alerter.send(f"🌅 Pre-market: VIX={vix_display} | Bot ready")
-            logger.debug(f"[PRE_MARKET] Telegram alert sent")
+            logger.info(f"[PRE_MARKET] Telegram alert sent")
         except Exception as e:
             logger.info(f"[PRE_MARKET] Error: {e}", exc_info=True)
 
     def compute_daily_regime(self):
         logger.info("🧠 Computing daily market regime...")
-        logger.debug(f"[REGIME] Processing {len(self.config.instruments)} instruments...")
+        logger.info(f"[REGIME] Processing {len(self.config.instruments)} instruments...")
         for instrument_key in self.config.instruments:
             try:
-                logger.debug(f"[REGIME] Fetching 30-minute OHLCV for {instrument_key} (10 days)...")
+                logger.info(f"[REGIME] Fetching 30-minute OHLCV for {instrument_key} (10 days)...")
                 df = self.broker.get_ohlcv(instrument_key, "30minute", days=10)
                 if df.empty:
-                    logger.debug(f"[REGIME] No data for {instrument_key}, skipping")
+                    logger.info(f"[REGIME] No data for {instrument_key}, skipping")
                     continue
-                logger.debug(f"[REGIME] ✅ Got {len(df)} candles")
+                logger.info(f"[REGIME] ✅ Got {len(df)} candles")
                 
-                logger.debug(f"[REGIME] Fetching VIX...")
+                logger.info(f"[REGIME] Fetching VIX...")
                 vix = self.broker.get_india_vix() or 15.0
-                logger.debug(f"[REGIME] VIX: {vix:.2f}")
+                logger.info(f"[REGIME] VIX: {vix:.2f}")
                 
-                logger.debug(f"[REGIME] Running regime classification...")
+                logger.info(f"[REGIME] Running regime classification...")
                 regime, confidence, features = self.regime_classifier.classify(df, vix)
-                logger.debug(f"[REGIME] Classification result: {regime} (confidence: {confidence:.0%})")
-                logger.debug(f"[REGIME] Features: ADX={features.get('adx', 0):.1f}, RSI={features.get('rsi', 0):.1f}, PCR={features.get('pcr', 1.0):.2f}")
+                logger.info(f"[REGIME] Classification result: {regime} (confidence: {confidence:.0%})")
+                logger.info(f"[REGIME] Features: ADX={features.get('adx', 0):.1f}, RSI={features.get('rsi', 0):.1f}, PCR={features.get('pcr', 1.0):.2f}")
                 
                 self.active_regime = regime
                 self.regime_confidence = confidence
@@ -101,61 +98,61 @@ class BotEngine:
                     "pcr": features.get("pcr", 1.0),
                     "ema_cross": str(features.get("ema_cross", 0)),
                 })
-                logger.debug(f"[REGIME] Regime logged to database")
+                logger.info(f"[REGIME] Regime logged to database")
                 logger.info(f"[REGIME] ✅ {instrument_key}: {regime} ({confidence:.0%}) | ADX={features.get('adx', 0):.1f} RSI={features.get('rsi', 50):.1f} VIX={vix:.2f}")
             except Exception as e:
                 logger.info(f"[REGIME] Error for {instrument_key}: {e}", exc_info=True)
 
     def check_signals(self):
-        logger.debug("[SIGNAL_CHECK] Starting signal check cycle...")
+        logger.info("[SIGNAL_CHECK] Starting signal check cycle...")
         if not self._bot_active:
-            logger.debug("[SIGNAL_CHECK] Bot is inactive, skipping")
+            logger.info("[SIGNAL_CHECK] Bot is inactive, skipping")
             return
         if not self.config.auto_trade and not self.config.paper_trading:
-            logger.debug("[SIGNAL_CHECK] Neither auto_trade nor paper_trading enabled")
+            logger.info("[SIGNAL_CHECK] Neither auto_trade nor paper_trading enabled")
             return
 
-        logger.debug(f"[SIGNAL_CHECK] Checking {len(self.config.instruments)} instruments...")
+        logger.info(f"[SIGNAL_CHECK] Checking {len(self.config.instruments)} instruments...")
         for instrument_key in self.config.instruments:
             try:
-                logger.debug(f"[SIGNAL_CHECK] Evaluating {instrument_key}...")
+                logger.info(f"[SIGNAL_CHECK] Evaluating {instrument_key}...")
                 self._evaluate_instrument(instrument_key)
             except Exception as e:
                 logger.info(f"Signal check error for {instrument_key}: {e}", exc_info=True)
 
     def _evaluate_instrument(self, instrument_key: str):
-        logger.debug(f"[EVAL] Starting evaluation for {instrument_key}")
+        logger.info(f"[EVAL] Starting evaluation for {instrument_key}")
         
         # Fetch OHLCV data
-        logger.debug(f"[EVAL] Fetching 15-minute OHLCV data (3 days)...")
+        logger.info(f"[EVAL] Fetching 15-minute OHLCV data (3 days)...")
         df = self.broker.get_ohlcv(instrument_key, "15minute", days=3)
         if df is None or len(df) < 20:
-            logger.debug(f"[EVAL] Insufficient data: {len(df) if df is not None else 0} candles (need 20+)")
+            logger.info(f"[EVAL] Insufficient data: {len(df) if df is not None else 0} candles (need 20+)")
             return
-        logger.debug(f"[EVAL] ✅ Got {len(df)} candles")
+        logger.info(f"[EVAL] ✅ Got {len(df)} candles")
 
         # Fetch VIX
-        logger.debug(f"[EVAL] Fetching India VIX...")
+        logger.info(f"[EVAL] Fetching India VIX...")
         vix = self.broker.get_india_vix() or 15.0
-        logger.debug(f"[EVAL] VIX: {vix:.2f}")
+        logger.info(f"[EVAL] VIX: {vix:.2f}")
         
         # Fetch expiries
-        logger.debug(f"[EVAL] Fetching option expiries...")
+        logger.info(f"[EVAL] Fetching option expiries...")
         expiries = self.broker.get_option_expiries(instrument_key)
         expiry = expiries[0] if expiries else None
         if not expiry:
-            logger.debug(f"[EVAL] No available expiries found")
+            logger.info(f"[EVAL] No available expiries found")
             return
-        logger.debug(f"[EVAL] Using expiry: {expiry}")
+        logger.info(f"[EVAL] Using expiry: {expiry}")
 
         # Fetch option chain
-        logger.debug(f"[EVAL] Fetching option chain...")
+        logger.info(f"[EVAL] Fetching option chain...")
         chain = self.broker.get_option_chain(instrument_key, expiry)
         chain_list = chain if isinstance(chain, list) else []
-        logger.debug(f"[EVAL] ✅ Got {len(chain_list)} option contracts")
+        logger.info(f"[EVAL] ✅ Got {len(chain_list)} option contracts")
 
         # Build context for strategies
-        logger.debug(f"[EVAL] Building strategy context...")
+        logger.info(f"[EVAL] Building strategy context...")
         oi_snap_now = self._build_oi_snapshot(chain_list)
         context = {
             "vix": vix,
@@ -168,21 +165,21 @@ class BotEngine:
             "chain_snapshot_now": oi_snap_now,
             "days_to_expiry": 3,
         }
-        logger.debug(f"[EVAL] Context prepared: VIX={vix:.2f}, OI_strikes={len(oi_snap_now)}")
+        logger.info(f"[EVAL] Context prepared: VIX={vix:.2f}, OI_strikes={len(oi_snap_now)}")
 
         # Update OI snapshot
         self._oi_snapshot_prev[instrument_key] = oi_snap_now
 
         # Run strategy engine
-        logger.debug(f"[EVAL] Running strategy evaluation...")
+        logger.info(f"[EVAL] Running strategy evaluation...")
         signal, score, details = self.strategy_engine.evaluate(df, context)
-        logger.debug(f"[EVAL] Strategy evaluation complete: score={score:.2%}, signal={signal}")
+        logger.info(f"[EVAL] Strategy evaluation complete: score={score:.2%}, signal={signal}")
 
         # Log signal details
         signal_type = "BUY_CE" if signal == BUY_CE else "BUY_PE" if signal == BUY_PE else "NO_TRADE"
         strategies_summary = {k: {"signal": v["signal"], "confidence": v["confidence"]} for k, v in details.items()}
-        logger.debug(f"[EVAL] Signal details: {signal_type}, Score: {score:.2%}")
-        logger.debug(f"[EVAL] Strategy breakdown: {json.dumps(strategies_summary, indent=2)}")
+        logger.info(f"[EVAL] Signal details: {signal_type}, Score: {score:.2%}")
+        logger.info(f"[EVAL] Strategy breakdown: {json.dumps(strategies_summary, indent=2)}")
         
         self.db.insert_signal({
             "timestamp": str(datetime.now()),
@@ -193,14 +190,14 @@ class BotEngine:
             "regime": self.active_regime,
             "confidence": score,
         })
-        logger.debug(f"[EVAL] Signal saved to database")
+        logger.info(f"[EVAL] Signal saved to database")
 
         if signal == NO_TRADE:
-            logger.debug(f"[EVAL] Signal is NO_TRADE, skipping execution")
+            logger.info(f"[EVAL] Signal is NO_TRADE, skipping execution")
             return
         
         if score < 0.38:
-            logger.debug(f"[EVAL] Score {score:.2%} below threshold (0.38), skipping execution")
+            logger.info(f"[EVAL] Score {score:.2%} below threshold (0.38), skipping execution")
             return
         
         logger.info(f"[EVAL] ✅ Valid signal: {signal_type} with score {score:.2%}")
@@ -212,63 +209,63 @@ class BotEngine:
         logger.info(f"[TRADE] Starting trade execution for {instrument_key}...")
         
         # Determine strike
-        logger.debug(f"[TRADE] Fetching LTP for {instrument_key}...")
+        logger.info(f"[TRADE] Fetching LTP for {instrument_key}...")
         ltp = self.broker.get_ltp(instrument_key)
         if not ltp:
-            logger.warning(f"[TRADE] Could not fetch LTP, aborting trade")
+            logger.info(f"[TRADE] Could not fetch LTP, aborting trade")
             return
-        logger.debug(f"[TRADE] LTP: ₹{ltp:.2f}")
+        logger.info(f"[TRADE] LTP: ₹{ltp:.2f}")
 
         lot_size = 50 if "Nifty 50" in instrument_key else 25
-        logger.debug(f"[TRADE] Lot size: {lot_size}")
+        logger.info(f"[TRADE] Lot size: {lot_size}")
         
         atm = round(ltp / lot_size) * lot_size
         otm_offset = lot_size  # 1 strike OTM
         strike = atm + (otm_offset if signal == BUY_CE else -otm_offset)
         option_type = "CE" if signal == BUY_CE else "PE"
-        logger.debug(f"[TRADE] Strike calculation: ATM={atm}, Strike={strike}, Type={option_type}")
+        logger.info(f"[TRADE] Strike calculation: ATM={atm}, Strike={strike}, Type={option_type}")
 
         # Find option instrument key
-        logger.debug(f"[TRADE] Finding option instrument: {strike}{option_type} {expiry}")
+        logger.info(f"[TRADE] Finding option instrument: {strike}{option_type} {expiry}")
         opt_key = self.broker.find_option_instrument(instrument_key, strike, option_type, expiry)
         if not opt_key:
-            logger.warning(f"[TRADE] Could not find option instrument for {strike}{option_type} {expiry}")
+            logger.info(f"[TRADE] Could not find option instrument for {strike}{option_type} {expiry}")
             return
-        logger.debug(f"[TRADE] ✅ Option found: {opt_key}")
+        logger.info(f"[TRADE] ✅ Option found: {opt_key}")
 
         # Get option premium
-        logger.debug(f"[TRADE] Fetching premium for {opt_key}...")
+        logger.info(f"[TRADE] Fetching premium for {opt_key}...")
         premium = self.broker.get_ltp(opt_key)
         if not premium:
-            logger.warning(f"[TRADE] Could not fetch premium, aborting")
+            logger.info(f"[TRADE] Could not fetch premium, aborting")
             return
-        logger.debug(f"[TRADE] Premium: ₹{premium:.2f}")
+        logger.info(f"[TRADE] Premium: ₹{premium:.2f}")
 
         # Qty calculation
-        logger.debug(f"[TRADE] Calculating position size...")
+        logger.info(f"[TRADE] Calculating position size...")
         qty = max(1, self.risk_guard.position_size(self.capital, score, lot_size)) * lot_size
-        logger.debug(f"[TRADE] Position size: {qty} contracts")
+        logger.info(f"[TRADE] Position size: {qty} contracts")
 
         # Risk validation
-        logger.debug(f"[TRADE] Running risk validation checks...")
+        logger.info(f"[TRADE] Running risk validation checks...")
         approved, reason = self.risk_guard.validate(self.capital, premium, qty, score)
         if not approved:
             logger.info(f"[TRADE] ❌ Trade rejected: {reason}")
             return
-        logger.debug(f"[TRADE] ✅ Risk checks passed")
+        logger.info(f"[TRADE] ✅ Risk checks passed")
 
         # SL/Target calculation
-        logger.debug(f"[TRADE] Calculating SL and Target levels...")
+        logger.info(f"[TRADE] Calculating SL and Target levels...")
         levels = self.risk_guard.calculate_sl_target(premium, signal, self.active_regime)
-        logger.debug(f"[TRADE] SL: ₹{levels['sl_price']:.2f}, T1: ₹{levels['target1_price']:.2f}, T2: ₹{levels['target2_price']:.2f}")
+        logger.info(f"[TRADE] SL: ₹{levels['sl_price']:.2f}, T1: ₹{levels['target1_price']:.2f}, T2: ₹{levels['target2_price']:.2f}")
 
         # Place order
-        logger.debug(f"[TRADE] Placing order: BUY {qty} {opt_key} @ ₹{premium}...")
+        logger.info(f"[TRADE] Placing order: BUY {qty} {opt_key} @ ₹{premium}...")
         order = self.broker.place_order(opt_key, qty, transaction_type="BUY")
         if not order:
             logger.info(f"[TRADE] Order placement failed")
             return
-        logger.debug(f"[TRADE] ✅ Order placed: {order.get('order_id')}")
+        logger.info(f"[TRADE] ✅ Order placed: {order.get('order_id')}")
 
         trade_id = str(uuid.uuid4())[:8].upper()
         strategies_voted = [k for k, v in details.items() if v["signal"] == signal]
@@ -296,7 +293,7 @@ class BotEngine:
         }
 
         self.db.insert_trade(trade)
-        logger.debug(f"[TRADE] Trade record saved to database")
+        logger.info(f"[TRADE] Trade record saved to database")
         logger.info(f"✅ [TRADE] EXECUTED: {trade_id} | {qty}x {instrument_key} {strike}{option_type} @ ₹{premium} | SL:₹{levels['sl_price']} T1:₹{levels['target1_price']} T2:₹{levels['target2_price']}")
 
         # Alert

@@ -1,68 +1,576 @@
-2026-06-18 07:35:04,474 [INFO] DATABASE — [DB] Initializing database at data/bot.db
-2026-06-18 07:35:04,474 [INFO] DATABASE — [DB] Creating/verifying database schema...
-2026-06-18 07:35:04,475 [INFO] DATABASE — [DB] ✅ Database initialized successfully
-2026-06-18 07:35:04,475 [INFO] GROWW — Authenticating via API Key + Secret flow...
-2026-06-18 07:35:04,476 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): api.groww.in:443
-2026-06-18 07:35:04,580 [DEBUG] urllib3.connectionpool — https://api.groww.in:443 "POST /v1/token/api/access HTTP/1.1" 200 None
-2026-06-18 07:35:04,583 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): api.groww.in:443
-2026-06-18 07:35:04,648 [DEBUG] urllib3.connectionpool — https://api.groww.in:443 "GET /v1/changelog HTTP/1.1" 200 24
-2026-06-18 07:35:04,651 [INFO] GROWW — ✅ Groww API authenticated successfully
-2026-06-18 07:35:04,651 [INFO] DATABASE — [DB] Fetching daily P&L for last 1 days...
-2026-06-18 07:35:04,652 [INFO] DATABASE — [DB] ✅ Retrieved 0 daily P&L records
-2026-06-18 07:35:04,653 [INFO] MAIN — 🚀 AI Options Bot starting...
-2026-06-18 07:35:04,653 [INFO] TELEGRAM — [TELEGRAM] (No token configured) 🤖 Bot started and monitoring markets...
-2026-06-18 07:35:04,655 [INFO] MAIN — ✅ Schedule configured
-2026-06-18 07:35:04,657 [DEBUG] asyncio — Using selector: EpollSelector
-2026-06-18 07:42:50,717 [INFO] MAIN — Shutdown signal received
-2026-06-18 07:42:50,718 [INFO] ENGINE — 🔒 All positions closed
-2026-06-18 13:14:33 [INFO] DATABASE — [DB] Initializing database at data/bot.db
-2026-06-18 13:14:33 [INFO] DATABASE — [DB] Creating/verifying database schema...
-2026-06-18 13:14:33 [INFO] DATABASE — [DB] ✅ Database initialized successfully
-2026-06-18 13:14:33 [INFO] GROWW — Authenticating via API Key + Secret flow...
-2026-06-18 13:14:33 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): api.groww.in:443
-2026-06-18 13:14:33 [DEBUG] urllib3.connectionpool — https://api.groww.in:443 "POST /v1/token/api/access HTTP/1.1" 200 None
-2026-06-18 13:14:33 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): api.groww.in:443
-2026-06-18 13:14:33 [DEBUG] urllib3.connectionpool — https://api.groww.in:443 "GET /v1/changelog HTTP/1.1" 200 24
-2026-06-18 13:14:33 [INFO] GROWW — ✅ Groww API authenticated successfully
-2026-06-18 13:14:33 [INFO] DATABASE — [DB] Fetching daily P&L for last 1 days...
-2026-06-18 13:14:33 [INFO] DATABASE — [DB] ✅ Retrieved 0 daily P&L records
-2026-06-18 13:14:33 [INFO] MAIN — 🚀 AI Options Bot starting...
-2026-06-18 13:14:33 [INFO] TELEGRAM — [TELEGRAM] (No token configured) 🤖 Bot started and monitoring markets...
-2026-06-18 13:14:33 [INFO] MAIN — ✅ Schedule configured
-2026-06-18 13:14:33 [DEBUG] asyncio — Using selector: EpollSelector
-2026-06-18 13:15:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
-2026-06-18 13:15:00 [DEBUG] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
-2026-06-18 13:15:00 [DEBUG] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
-2026-06-18 13:15:00 [DEBUG] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
-2026-06-18 13:15:00 [DEBUG] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
-2026-06-18 13:15:00 [DEBUG] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
-2026-06-18 13:15:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): api.groww.in:443
-2026-06-18 13:15:01 [DEBUG] urllib3.connectionpool — https://api.groww.in:443 "GET /v1/historical/candles?exchange=NSE&segment=CASH&groww_symbol=NSE-NIFTY&start_time=2026-06-15+09%3A15%3A00&end_time=2026-06-18+15%3A30%3A00&candle_interval=15minute HTTP/1.1" 403 None
-2026-06-18 13:15:01 [INFO] GROWW — OHLCV error [NSE_INDEX|Nifty 50]: Access forbidden for this request.
-2026-06-18 13:15:01 [DEBUG] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
-2026-06-18 13:15:01 [DEBUG] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
-2026-06-18 13:15:01 [DEBUG] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
-2026-06-18 13:15:01 [DEBUG] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
-2026-06-18 13:15:01 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): api.groww.in:443
-2026-06-18 13:15:01 [DEBUG] urllib3.connectionpool — https://api.groww.in:443 "GET /v1/historical/candles?exchange=NSE&segment=CASH&groww_symbol=NSE-BANKNIFTY&start_time=2026-06-15+09%3A15%3A00&end_time=2026-06-18+15%3A30%3A00&candle_interval=15minute HTTP/1.1" 403 None
-2026-06-18 13:15:01 [INFO] GROWW — OHLCV error [NSE_INDEX|Nifty Bank]: Access forbidden for this request.
-2026-06-18 13:15:01 [DEBUG] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
-2026-06-18 13:20:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
-2026-06-18 13:20:00 [DEBUG] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
-2026-06-18 13:20:00 [DEBUG] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
-2026-06-18 13:20:00 [DEBUG] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
-2026-06-18 13:20:00 [DEBUG] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
-2026-06-18 13:20:00 [DEBUG] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
-2026-06-18 13:20:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): api.groww.in:443
-2026-06-18 13:20:00 [DEBUG] urllib3.connectionpool — https://api.groww.in:443 "GET /v1/historical/candles?exchange=NSE&segment=CASH&groww_symbol=NSE-NIFTY&start_time=2026-06-15+09%3A15%3A00&end_time=2026-06-18+15%3A30%3A00&candle_interval=15minute HTTP/1.1" 403 None
-2026-06-18 13:20:00 [INFO] GROWW — OHLCV error [NSE_INDEX|Nifty 50]: Access forbidden for this request.
-2026-06-18 13:20:00 [DEBUG] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
-2026-06-18 13:20:00 [DEBUG] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
-2026-06-18 13:20:00 [DEBUG] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
-2026-06-18 13:20:00 [DEBUG] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
-2026-06-18 13:20:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): api.groww.in:443
-2026-06-18 13:20:00 [DEBUG] urllib3.connectionpool — https://api.groww.in:443 "GET /v1/historical/candles?exchange=NSE&segment=CASH&groww_symbol=NSE-BANKNIFTY&start_time=2026-06-15+09%3A15%3A00&end_time=2026-06-18+15%3A30%3A00&candle_interval=15minute HTTP/1.1" 403 None
-2026-06-18 13:20:00 [INFO] GROWW — OHLCV error [NSE_INDEX|Nifty Bank]: Access forbidden for this request.
-2026-06-18 13:20:00 [DEBUG] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
-2026-06-18 13:20:11 [INFO] MAIN — Shutdown signal received
-2026-06-18 13:20:11 [INFO] ENGINE — 🔒 All positions closed
+2026-06-19 12:45:52 [INFO] ENGINE — 🔒 All positions closed
+2026-06-19 12:46:03 [INFO] DATABASE — [DB] Initializing database at data/bot.db
+2026-06-19 12:46:03 [INFO] DATABASE — [DB] Creating/verifying database schema...
+2026-06-19 12:46:03 [INFO] DATABASE — [DB] ✅ Database initialized successfully
+2026-06-19 12:46:03 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 12:46:03 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/auth/angelbroking/user/v1/loginByPassword HTTP/1.1" 200 2575
+2026-06-19 12:46:03 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 12:46:03 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "GET /rest/secure/angelbroking/user/v1/getProfile?%7B%22refreshToken%22:%20%22eyJhbGciOiJIUzUxMiJ9.eyJ0b2tlbiI6IlJFRlJFU0gtVE9LRU4iLCJSRUZSRVNILVRPS0VOIjoiZXlKaGJHY2lPaUpTVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SjFjMlZ5WDNSNWNHVWlPaUpqYkdsbGJuUWlMQ0owYjJ0bGJsOTBlWEJsSWpvaWRISmhaR1ZmY21WbWNtVnphRjkwYjJ0bGJpSXNJbWR0WDJsa0lqb3dMQ0p6YjNWeVkyVWlPaUl6SWl3aVpHVjJhV05sWDJsa0lqb2lOR0pqWVdOalpUa3ROek0zTVMwek1EWTVMVGc0TVdRdE9XSTBOR0ZqWTJaaE9XVTFJaXdpYTJsa0lqb2lkSEpoWkdWZmEyVjVYM1l5SWl3aWIyMXVaVzFoYm1GblpYSnBaQ0k2TUN3aWFYTnpJam9pYkc5bmFXNWZjMlZ5ZG1salpTSXNJbk4xWWlJNklsTTJNakV3TXpJM01pSXNJbVY0Y0NJNk1UYzRNVGt6T1RjMk15d2libUptSWpveE56Z3hPRFV6TVRnekxDSnBZWFFpT2pFM09ERTROVE14T0RNc0ltcDBhU0k2SW1SalpXTXlPV0l3TFdObFpUY3RORFk0WkMxaE1qYzRMVEEyWTJJeE9XTTNZakEwTVNJc0lsUnZhMlZ1SWpvaUluMC5oU2RDSWtFNXJFbTBzcWVhR3JNdzQ2QmNxN1AzcVNDTGZ3bEc2NWRyVHhlOThGX0V0WnJrNHhrM1ZORXM2QlVsME44YWZxaWkzaFBWbnF5aUl3eHRLa19pejRXZnpXU1I2OUdOVHZQSHhrMW9FT2w4OWN1eXI1TUNPNy1YdWpOM0lVcDd4ZlBCXzFhVVluX1I2UWRyWUZXVDJzWnpjaDNpdjJkQ0QyeTYyWUUiLCJpYXQiOjE3ODE4NTMzNjN9.5Niod8wt4pzBy-X-OJh1mMThHJGT1DhRTYaNYuHoq0LnhtDeT8PnPHqEcrQUeiJIEoTmqwVTKTFyH1co-8V7pg%22%7D HTTP/1.1" 200 297
+2026-06-19 12:46:03 [INFO] ANGELONE — ✅ Angel One SmartAPI authenticated | Client: S62103272
+2026-06-19 12:46:03 [INFO] ANGELONE — 📥 Loading Angel One instrument master...
+2026-06-19 12:46:03 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): margincalculator.angelbroking.com:443
+2026-06-19 12:46:03 [DEBUG] urllib3.connectionpool — https://margincalculator.angelbroking.com:443 "GET /OpenAPI_File/files/OpenAPIScripMaster.json HTTP/1.1" 200 37124620
+2026-06-19 12:46:04 [INFO] ANGELONE — ✅ Instrument cache loaded: 175,255 instruments
+2026-06-19 12:46:04 [INFO] DATABASE — [DB] Fetching daily P&L for last 1 days...
+2026-06-19 12:46:04 [INFO] DATABASE — [DB] ✅ Retrieved 0 daily P&L records
+2026-06-19 12:46:04 [INFO] MAIN — 🚀 AI Options Bot starting...
+2026-06-19 12:46:04 [INFO] TELEGRAM — [TELEGRAM] (No token configured) 🤖 Bot started and monitoring markets...
+2026-06-19 12:46:04 [INFO] MAIN — ✅ Schedule configured
+2026-06-19 12:46:04 [DEBUG] asyncio — Using selector: EpollSelector
+2026-06-19 12:46:25 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/trades
+2026-06-19 12:46:25 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/settings
+2026-06-19 12:46:25 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/signals
+2026-06-19 12:46:25 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/status
+2026-06-19 12:46:25 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/backtest/results
+2026-06-19 12:46:25 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/analytics/daily-pnl
+2026-06-19 12:46:25 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/analytics/strategy-performance
+2026-06-19 12:46:25 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/trades status=200 time=29.19ms
+2026-06-19 12:46:25 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/settings status=200 time=26.27ms
+2026-06-19 12:46:25 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/signals status=200 time=26.36ms
+2026-06-19 12:46:25 [INFO] DATABASE — [DB] Fetching daily P&L for last 30 days...
+2026-06-19 12:46:25 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/status status=200 time=12.93ms
+2026-06-19 12:46:25 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/analytics/strategy-performance status=200 time=11.03ms
+2026-06-19 12:46:25 [INFO] DATABASE — [DB] ✅ Retrieved 0 daily P&L records
+2026-06-19 12:46:25 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/backtest/results status=200 time=13.63ms
+2026-06-19 12:46:25 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/analytics/daily-pnl status=200 time=13.90ms
+2026-06-19 12:46:25 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/signals
+2026-06-19 12:46:25 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/signals status=200 time=2.32ms
+2026-06-19 12:46:25 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/analytics/daily-pnl
+2026-06-19 12:46:25 [INFO] DATABASE — [DB] Fetching daily P&L for last 30 days...
+2026-06-19 12:46:25 [INFO] DATABASE — [DB] ✅ Retrieved 0 daily P&L records
+2026-06-19 12:46:25 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/analytics/daily-pnl status=200 time=2.08ms
+2026-06-19 12:46:25 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/backtest/results
+2026-06-19 12:46:25 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/backtest/results status=200 time=1.50ms
+2026-06-19 12:46:25 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/analytics/strategy-performance
+2026-06-19 12:46:25 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/status
+2026-06-19 12:46:25 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/analytics/strategy-performance status=200 time=4.92ms
+2026-06-19 12:46:25 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/status status=200 time=5.57ms
+2026-06-19 12:46:25 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/trades
+2026-06-19 12:46:25 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/settings
+2026-06-19 12:46:25 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/trades status=200 time=5.73ms
+2026-06-19 12:46:25 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/settings status=200 time=5.41ms
+2026-06-19 12:49:31 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/analytics/strategy-performance
+2026-06-19 12:49:31 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/analytics/strategy-performance status=200 time=2.24ms
+2026-06-19 12:49:31 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/analytics/daily-pnl
+2026-06-19 12:49:31 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/signals
+2026-06-19 12:49:31 [INFO] DATABASE — [DB] Fetching daily P&L for last 30 days...
+2026-06-19 12:49:31 [INFO] DATABASE — [DB] ✅ Retrieved 0 daily P&L records
+2026-06-19 12:49:31 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/analytics/daily-pnl status=200 time=5.46ms
+2026-06-19 12:49:31 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/signals status=200 time=3.77ms
+2026-06-19 12:49:31 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/settings
+2026-06-19 12:49:31 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/settings status=200 time=1.12ms
+2026-06-19 12:49:31 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/status
+2026-06-19 12:49:31 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/status status=200 time=2.11ms
+2026-06-19 12:49:31 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/trades
+2026-06-19 12:49:31 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/trades status=200 time=5.75ms
+2026-06-19 12:49:31 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/backtest/results
+2026-06-19 12:49:31 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/backtest/results status=200 time=1.71ms
+2026-06-19 12:49:31 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/settings
+2026-06-19 12:49:31 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/settings status=200 time=1.71ms
+2026-06-19 12:49:31 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/status
+2026-06-19 12:49:31 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/status status=200 time=4.99ms
+2026-06-19 12:49:31 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/signals
+2026-06-19 12:49:31 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/signals status=200 time=3.06ms
+2026-06-19 12:49:31 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/trades
+2026-06-19 12:49:31 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/trades status=200 time=1.34ms
+2026-06-19 12:49:31 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/backtest/results
+2026-06-19 12:49:31 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/backtest/results status=200 time=2.33ms
+2026-06-19 12:49:31 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/analytics/strategy-performance
+2026-06-19 12:49:31 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/analytics/strategy-performance status=200 time=3.78ms
+2026-06-19 12:49:31 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/analytics/daily-pnl
+2026-06-19 12:49:31 [INFO] DATABASE — [DB] Fetching daily P&L for last 30 days...
+2026-06-19 12:49:31 [INFO] DATABASE — [DB] ✅ Retrieved 0 daily P&L records
+2026-06-19 12:49:31 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/analytics/daily-pnl status=200 time=2.04ms
+2026-06-19 12:49:46 [INFO] MAIN — Shutdown signal received
+2026-06-19 12:49:46 [INFO] ENGINE — 🔒 All positions closed
+2026-06-19 12:49:52 [INFO] DATABASE — [DB] Initializing database at data/bot.db
+2026-06-19 12:49:52 [INFO] DATABASE — [DB] Creating/verifying database schema...
+2026-06-19 12:49:52 [INFO] DATABASE — [DB] ✅ Database initialized successfully
+2026-06-19 12:49:52 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 12:49:52 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/auth/angelbroking/user/v1/loginByPassword HTTP/1.1" 200 2575
+2026-06-19 12:49:52 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 12:49:52 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "GET /rest/secure/angelbroking/user/v1/getProfile?%7B%22refreshToken%22:%20%22eyJhbGciOiJIUzUxMiJ9.eyJ0b2tlbiI6IlJFRlJFU0gtVE9LRU4iLCJSRUZSRVNILVRPS0VOIjoiZXlKaGJHY2lPaUpTVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SjFjMlZ5WDNSNWNHVWlPaUpqYkdsbGJuUWlMQ0owYjJ0bGJsOTBlWEJsSWpvaWRISmhaR1ZmY21WbWNtVnphRjkwYjJ0bGJpSXNJbWR0WDJsa0lqb3dMQ0p6YjNWeVkyVWlPaUl6SWl3aVpHVjJhV05sWDJsa0lqb2lOR0pqWVdOalpUa3ROek0zTVMwek1EWTVMVGc0TVdRdE9XSTBOR0ZqWTJaaE9XVTFJaXdpYTJsa0lqb2lkSEpoWkdWZmEyVjVYM1l5SWl3aWIyMXVaVzFoYm1GblpYSnBaQ0k2TUN3aWFYTnpJam9pYkc5bmFXNWZjMlZ5ZG1salpTSXNJbk4xWWlJNklsTTJNakV3TXpJM01pSXNJbVY0Y0NJNk1UYzRNVGt6T1RrNU1pd2libUptSWpveE56Z3hPRFV6TkRFeUxDSnBZWFFpT2pFM09ERTROVE0wTVRJc0ltcDBhU0k2SWpJd05tVmhOak13TFdZM056Y3RORFUxWmkwNVpHWXlMVE16WVdNeFkyWmlNV1poTUNJc0lsUnZhMlZ1SWpvaUluMC5QS19NcE11LTVmQWl6dk9LVG5ubVlvajBKUzNBaVJROW42NVlEVUpUaHd0dnYzdmk2VFg2TldHWnNId2pEMEg1M3RUN1NIRUNDbUhhS3hWLTd6SzkyVTVMcXVsTWFvTF9SMnFXYUJPUDh6ejctRjJIUFowZ3lmUmZmTHFpcXJkNy0wVEFLUVdCVkExUE5URldUWGtjcG9nb21yZVhUNXdGV0Q0bm1WTGZPck0iLCJpYXQiOjE3ODE4NTM1OTJ9.VLzSckcnAqGfUCxtwXqGDHnCFXD6n7DUtTRWY7gSE8nVUuPART8vtKlUwbfXVBGkEqO2KmUk5bCFvw_Hx1cBXw%22%7D HTTP/1.1" 200 297
+2026-06-19 12:49:52 [INFO] ANGELONE — ✅ Angel One SmartAPI authenticated | Client: S62103272
+2026-06-19 12:49:52 [INFO] ANGELONE — 📥 Loading Angel One instrument master...
+2026-06-19 12:49:52 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): margincalculator.angelbroking.com:443
+2026-06-19 12:49:52 [DEBUG] urllib3.connectionpool — https://margincalculator.angelbroking.com:443 "GET /OpenAPI_File/files/OpenAPIScripMaster.json HTTP/1.1" 200 37124620
+2026-06-19 12:49:53 [INFO] ANGELONE — ✅ Instrument cache loaded: 175,255 instruments
+2026-06-19 12:49:53 [INFO] DATABASE — [DB] Fetching daily P&L for last 1 days...
+2026-06-19 12:49:53 [INFO] DATABASE — [DB] ✅ Retrieved 0 daily P&L records
+2026-06-19 12:49:53 [INFO] MAIN — 🚀 AI Options Bot starting...
+2026-06-19 12:49:53 [INFO] TELEGRAM — [TELEGRAM] (No token configured) 🤖 Bot started and monitoring markets...
+2026-06-19 12:49:53 [INFO] MAIN — ✅ Schedule configured
+2026-06-19 12:49:53 [DEBUG] asyncio — Using selector: EpollSelector
+2026-06-19 12:50:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 12:50:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 12:50:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 12:50:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 12:50:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 12:50:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 12:50:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 12:50', 'todate': '2026-06-19 12:50'}
+2026-06-19 12:50:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 12:50:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 12:50:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 12:50:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 12:50:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 12:50:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 12:50:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 12:50:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 12:50', 'todate': '2026-06-19 12:50'}
+2026-06-19 12:50:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 12:50:01 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 12:50:01 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 12:50:01 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 12:51:57 [INFO] MAIN — Shutdown signal received
+2026-06-19 12:51:57 [INFO] ENGINE — 🔒 All positions closed
+2026-06-19 12:52:01 [INFO] DATABASE — [DB] Initializing database at data/bot.db
+2026-06-19 12:52:01 [INFO] DATABASE — [DB] Creating/verifying database schema...
+2026-06-19 12:52:01 [INFO] DATABASE — [DB] ✅ Database initialized successfully
+2026-06-19 12:52:01 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 12:52:02 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/auth/angelbroking/user/v1/loginByPassword HTTP/1.1" 200 2575
+2026-06-19 12:52:02 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 12:52:02 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "GET /rest/secure/angelbroking/user/v1/getProfile?%7B%22refreshToken%22:%20%22eyJhbGciOiJIUzUxMiJ9.eyJ0b2tlbiI6IlJFRlJFU0gtVE9LRU4iLCJSRUZSRVNILVRPS0VOIjoiZXlKaGJHY2lPaUpTVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SjFjMlZ5WDNSNWNHVWlPaUpqYkdsbGJuUWlMQ0owYjJ0bGJsOTBlWEJsSWpvaWRISmhaR1ZmY21WbWNtVnphRjkwYjJ0bGJpSXNJbWR0WDJsa0lqb3dMQ0p6YjNWeVkyVWlPaUl6SWl3aVpHVjJhV05sWDJsa0lqb2lOR0pqWVdOalpUa3ROek0zTVMwek1EWTVMVGc0TVdRdE9XSTBOR0ZqWTJaaE9XVTFJaXdpYTJsa0lqb2lkSEpoWkdWZmEyVjVYM1l5SWl3aWIyMXVaVzFoYm1GblpYSnBaQ0k2TUN3aWFYTnpJam9pYkc5bmFXNWZjMlZ5ZG1salpTSXNJbk4xWWlJNklsTTJNakV3TXpJM01pSXNJbVY0Y0NJNk1UYzRNVGswTURFeU1pd2libUptSWpveE56Z3hPRFV6TlRReUxDSnBZWFFpT2pFM09ERTROVE0xTkRJc0ltcDBhU0k2SWpSak1qRTVORFZtTFRrME9UTXROREZpTVMxaE5UWTFMVGRtTlRNek5tSTVPR0kyWVNJc0lsUnZhMlZ1SWpvaUluMC5lY3NxdVlVbi1LeEZXOXRVWFdNRkJodGdzajZZdzNzUmRxZmlMemZreE9PUWJpWXhsRk9Fc0lBRW90cVlQZ25zQmVtRFNBT25rVFV6MGtTdno3YUlzb2dBRlBMWklodGRzUW5YMVZONWV2TnVnOGFNVlJGcE91dDdYbjdkTTd5YmVsUDFCUnNLdFdOZUpTTmM4eVFNc1BvSUpxblJyUUhDT3l3ZVFpbnVpQmsiLCJpYXQiOjE3ODE4NTM3MjJ9.rp3njp9gSGLp642fbIpc44Ljr3XZFktpbr_RTQyodnZ8HE7VF1LIEPcS8aTLZcUa3fFl4-jN1hwEs0yDSXa5VA%22%7D HTTP/1.1" 200 297
+2026-06-19 12:52:02 [INFO] ANGELONE — ✅ Angel One SmartAPI authenticated | Client: S62103272
+2026-06-19 12:52:02 [INFO] ANGELONE — 📥 Loading Angel One instrument master...
+2026-06-19 12:52:02 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): margincalculator.angelbroking.com:443
+2026-06-19 12:52:02 [DEBUG] urllib3.connectionpool — https://margincalculator.angelbroking.com:443 "GET /OpenAPI_File/files/OpenAPIScripMaster.json HTTP/1.1" 200 37124620
+2026-06-19 12:52:03 [INFO] ANGELONE — ✅ Instrument cache loaded: 175,255 instruments
+2026-06-19 12:52:03 [INFO] DATABASE — [DB] Fetching daily P&L for last 1 days...
+2026-06-19 12:52:03 [INFO] DATABASE — [DB] ✅ Retrieved 0 daily P&L records
+2026-06-19 12:52:03 [INFO] MAIN — 🚀 AI Options Bot starting...
+2026-06-19 12:52:03 [INFO] TELEGRAM — [TELEGRAM] (No token configured) 🤖 Bot started and monitoring markets...
+2026-06-19 12:52:03 [INFO] MAIN — ✅ Schedule configured
+2026-06-19 12:52:03 [DEBUG] asyncio — Using selector: EpollSelector
+2026-06-19 12:52:12 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/settings
+2026-06-19 12:52:12 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/settings status=200 time=3.71ms
+2026-06-19 12:52:12 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/analytics/strategy-performance
+2026-06-19 12:52:12 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/analytics/strategy-performance status=200 time=2.77ms
+2026-06-19 12:52:12 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/signals
+2026-06-19 12:52:12 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/signals status=200 time=4.07ms
+2026-06-19 12:52:12 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/trades
+2026-06-19 12:52:12 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/trades status=200 time=3.97ms
+2026-06-19 12:52:12 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/backtest/results
+2026-06-19 12:52:12 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/analytics/daily-pnl
+2026-06-19 12:52:12 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/status
+2026-06-19 12:52:12 [INFO] DATABASE — [DB] Fetching daily P&L for last 30 days...
+2026-06-19 12:52:12 [INFO] DATABASE — [DB] ✅ Retrieved 0 daily P&L records
+2026-06-19 12:52:12 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/backtest/results status=200 time=25.05ms
+2026-06-19 12:52:12 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/analytics/daily-pnl status=200 time=8.14ms
+2026-06-19 12:52:12 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/status status=200 time=5.35ms
+2026-06-19 12:52:12 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/analytics/strategy-performance
+2026-06-19 12:52:12 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/analytics/strategy-performance status=200 time=1.46ms
+2026-06-19 12:52:12 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/analytics/daily-pnl
+2026-06-19 12:52:12 [INFO] DATABASE — [DB] Fetching daily P&L for last 30 days...
+2026-06-19 12:52:12 [INFO] DATABASE — [DB] ✅ Retrieved 0 daily P&L records
+2026-06-19 12:52:12 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/analytics/daily-pnl status=200 time=2.16ms
+2026-06-19 12:52:12 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/backtest/results
+2026-06-19 12:52:12 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/signals
+2026-06-19 12:52:12 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/backtest/results status=200 time=4.74ms
+2026-06-19 12:52:12 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/signals status=200 time=3.77ms
+2026-06-19 12:52:12 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/status
+2026-06-19 12:52:12 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/status status=200 time=2.62ms
+2026-06-19 12:52:12 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/settings
+2026-06-19 12:52:12 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/settings status=200 time=2.89ms
+2026-06-19 12:52:12 [WARNING] API — REQUEST START | ip=122.179.158.206 method=GET path=/api/trades
+2026-06-19 12:52:12 [WARNING] API — REQUEST END | ip=122.179.158.206 method=GET path=/api/trades status=200 time=3.02ms
+2026-06-19 12:55:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 12:55:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 12:55:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 12:55:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 12:55:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 12:55:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 12:55:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 12:55', 'todate': '2026-06-19 12:55'}
+2026-06-19 12:55:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 12:55:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 12:55:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 12:55:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 12:55:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 12:55:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 12:55:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 12:55:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 12:55', 'todate': '2026-06-19 12:55'}
+2026-06-19 12:55:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 12:55:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 12:55:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 12:55:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:00:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 13:00:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 13:00:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 13:00:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 13:00:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 13:00:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:00:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:00', 'todate': '2026-06-19 13:00'}
+2026-06-19 13:00:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:00:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 13:00:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 13:00:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:00:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 13:00:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 13:00:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:00:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:00', 'todate': '2026-06-19 13:00'}
+2026-06-19 13:00:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:00:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 13:00:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 13:00:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:00:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=mid_day_review, args=(), kwargs={})
+2026-06-19 13:05:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 13:05:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 13:05:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 13:05:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 13:05:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 13:05:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:05:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:05', 'todate': '2026-06-19 13:05'}
+2026-06-19 13:05:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:05:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 13:05:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 13:05:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:05:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 13:05:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 13:05:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:05:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:05', 'todate': '2026-06-19 13:05'}
+2026-06-19 13:05:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:05:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 13:05:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 13:05:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:10:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 13:10:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 13:10:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 13:10:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 13:10:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 13:10:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:10:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:10', 'todate': '2026-06-19 13:10'}
+2026-06-19 13:10:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:10:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 403 46
+2026-06-19 13:10:00 [ERROR] ANGELONE — OHLCV error [NSE_INDEX|Nifty 50]: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'
+2026-06-19 13:10:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:10:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 13:10:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 13:10:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:10:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:10', 'todate': '2026-06-19 13:10'}
+2026-06-19 13:10:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:10:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 13:10:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 13:10:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:15:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 13:15:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 13:15:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 13:15:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 13:15:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 13:15:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:15:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:15', 'todate': '2026-06-19 13:15'}
+2026-06-19 13:15:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:15:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 13:15:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 13:15:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:15:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 13:15:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 13:15:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:15:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:15', 'todate': '2026-06-19 13:15'}
+2026-06-19 13:15:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:15:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 13:15:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 13:15:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:20:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 13:20:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 13:20:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 13:20:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 13:20:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 13:20:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:20:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:20', 'todate': '2026-06-19 13:20'}
+2026-06-19 13:20:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:20:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 13:20:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 13:20:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:20:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 13:20:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 13:20:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:20:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:20', 'todate': '2026-06-19 13:20'}
+2026-06-19 13:20:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:20:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 13:20:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 13:20:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:25:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 13:25:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 13:25:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 13:25:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 13:25:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 13:25:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:25:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:25', 'todate': '2026-06-19 13:25'}
+2026-06-19 13:25:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:25:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 13:25:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 13:25:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:25:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 13:25:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 13:25:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:25:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:25', 'todate': '2026-06-19 13:25'}
+2026-06-19 13:25:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:25:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 13:25:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 13:25:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:30:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 13:30:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 13:30:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 13:30:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 13:30:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 13:30:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:30:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:30', 'todate': '2026-06-19 13:30'}
+2026-06-19 13:30:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:30:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 403 46
+2026-06-19 13:30:00 [ERROR] ANGELONE — OHLCV error [NSE_INDEX|Nifty 50]: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'
+2026-06-19 13:30:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:30:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 13:30:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 13:30:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:30:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:30', 'todate': '2026-06-19 13:30'}
+2026-06-19 13:30:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:30:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 403 46
+2026-06-19 13:30:00 [ERROR] ANGELONE — OHLCV error [NSE_INDEX|Nifty Bank]: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'
+2026-06-19 13:30:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:35:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 13:35:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 13:35:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 13:35:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 13:35:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 13:35:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:35:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:35', 'todate': '2026-06-19 13:35'}
+2026-06-19 13:35:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:35:01 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 13:35:01 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 13:35:01 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:35:01 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 13:35:01 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 13:35:01 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:35:01 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:35', 'todate': '2026-06-19 13:35'}
+2026-06-19 13:35:01 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:35:01 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 13:35:01 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 13:35:01 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:40:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 13:40:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 13:40:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 13:40:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 13:40:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 13:40:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:40:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:40', 'todate': '2026-06-19 13:40'}
+2026-06-19 13:40:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:40:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 13:40:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 13:40:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:40:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 13:40:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 13:40:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:40:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:40', 'todate': '2026-06-19 13:40'}
+2026-06-19 13:40:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:40:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 13:40:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 13:40:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:45:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 13:45:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 13:45:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 13:45:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 13:45:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 13:45:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:45:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:45', 'todate': '2026-06-19 13:45'}
+2026-06-19 13:45:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:45:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 403 46
+2026-06-19 13:45:00 [ERROR] ANGELONE — OHLCV error [NSE_INDEX|Nifty 50]: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'
+2026-06-19 13:45:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:45:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 13:45:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 13:45:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:45:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:45', 'todate': '2026-06-19 13:45'}
+2026-06-19 13:45:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:45:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 13:45:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 13:45:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:50:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 13:50:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 13:50:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 13:50:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 13:50:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 13:50:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:50:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:50', 'todate': '2026-06-19 13:50'}
+2026-06-19 13:50:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:50:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 403 46
+2026-06-19 13:50:00 [ERROR] ANGELONE — OHLCV error [NSE_INDEX|Nifty 50]: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'
+2026-06-19 13:50:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:50:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 13:50:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 13:50:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:50:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:50', 'todate': '2026-06-19 13:50'}
+2026-06-19 13:50:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:50:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 403 46
+2026-06-19 13:50:00 [ERROR] ANGELONE — OHLCV error [NSE_INDEX|Nifty Bank]: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'
+2026-06-19 13:50:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:55:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 13:55:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 13:55:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 13:55:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 13:55:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 13:55:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:55:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:55', 'todate': '2026-06-19 13:55'}
+2026-06-19 13:55:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:55:01 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 403 46
+2026-06-19 13:55:01 [ERROR] ANGELONE — OHLCV error [NSE_INDEX|Nifty 50]: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'
+2026-06-19 13:55:01 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 13:55:01 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 13:55:01 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 13:55:01 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 13:55:01 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 13:55', 'todate': '2026-06-19 13:55'}
+2026-06-19 13:55:01 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 13:55:01 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 403 46
+2026-06-19 13:55:01 [ERROR] ANGELONE — OHLCV error [NSE_INDEX|Nifty Bank]: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'
+2026-06-19 13:55:01 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 14:00:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 14:00:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 14:00:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 14:00:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 14:00:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 14:00:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 14:00:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 14:00', 'todate': '2026-06-19 14:00'}
+2026-06-19 14:00:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 14:00:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 14:00:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 14:00:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 14:00:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 14:00:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 14:00:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 14:00:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 14:00', 'todate': '2026-06-19 14:00'}
+2026-06-19 14:00:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 14:00:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 14:00:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 14:00:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 14:05:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 14:05:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 14:05:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 14:05:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 14:05:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 14:05:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 14:05:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 14:05', 'todate': '2026-06-19 14:05'}
+2026-06-19 14:05:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 14:05:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 403 46
+2026-06-19 14:05:00 [ERROR] ANGELONE — OHLCV error [NSE_INDEX|Nifty 50]: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'
+2026-06-19 14:05:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 14:05:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 14:05:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 14:05:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 14:05:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 14:05', 'todate': '2026-06-19 14:05'}
+2026-06-19 14:05:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 14:05:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 14:05:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 14:05:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 14:10:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 14:10:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 14:10:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 14:10:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 14:10:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 14:10:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 14:10:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 14:10', 'todate': '2026-06-19 14:10'}
+2026-06-19 14:10:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 14:10:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 14:10:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 14:10:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 14:10:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 14:10:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 14:10:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 14:10:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 14:10', 'todate': '2026-06-19 14:10'}
+2026-06-19 14:10:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 14:10:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 14:10:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 14:10:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 14:15:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 14:15:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 14:15:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 14:15:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 14:15:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 14:15:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 14:15:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 14:15', 'todate': '2026-06-19 14:15'}
+2026-06-19 14:15:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 14:15:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 14:15:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 14:15:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 14:15:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 14:15:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 14:15:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 14:15:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 14:15', 'todate': '2026-06-19 14:15'}
+2026-06-19 14:15:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 14:15:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 14:15:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 14:15:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 14:20:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 14:20:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 14:20:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 14:20:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 14:20:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 14:20:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 14:20:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 14:20', 'todate': '2026-06-19 14:20'}
+2026-06-19 14:20:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 14:20:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 14:20:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 14:20:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 14:20:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 14:20:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 14:20:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 14:20:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 14:20', 'todate': '2026-06-19 14:20'}
+2026-06-19 14:20:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 14:20:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 403 46
+2026-06-19 14:20:00 [ERROR] ANGELONE — OHLCV error [NSE_INDEX|Nifty Bank]: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'
+2026-06-19 14:20:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 14:25:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 14:25:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 14:25:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 14:25:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 14:25:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 14:25:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 14:25:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 14:25', 'todate': '2026-06-19 14:25'}
+2026-06-19 14:25:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 14:25:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 14:25:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 14:25:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 14:25:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 14:25:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 14:25:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 14:25:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 14:25', 'todate': '2026-06-19 14:25'}
+2026-06-19 14:25:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 14:25:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 14:25:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 14:25:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 14:30:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 14:30:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 14:30:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 14:30:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 14:30:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 14:30:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 14:30:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 14:30', 'todate': '2026-06-19 14:30'}
+2026-06-19 14:30:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 14:30:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 403 46
+2026-06-19 14:30:00 [ERROR] ANGELONE — OHLCV error [NSE_INDEX|Nifty 50]: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'
+2026-06-19 14:30:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 14:30:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 14:30:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 14:30:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 14:30:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 14:30', 'todate': '2026-06-19 14:30'}
+2026-06-19 14:30:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 14:30:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 403 46
+2026-06-19 14:30:00 [ERROR] ANGELONE — OHLCV error [NSE_INDEX|Nifty Bank]: Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'
+2026-06-19 14:30:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 14:35:00 [DEBUG] schedule — Running job Job(interval=1, unit=days, do=check_signals, args=(), kwargs={})
+2026-06-19 14:35:00 [INFO] ENGINE — [SIGNAL_CHECK] Starting signal check cycle...
+2026-06-19 14:35:00 [INFO] ENGINE — [SIGNAL_CHECK] Checking 2 instruments...
+2026-06-19 14:35:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty 50...
+2026-06-19 14:35:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty 50
+2026-06-19 14:35:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 14:35:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26000', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 14:35', 'todate': '2026-06-19 14:35'}
+2026-06-19 14:35:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 14:35:00 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 14:35:00 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 14:35:00 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 14:35:00 [INFO] ENGINE — [SIGNAL_CHECK] Evaluating NSE_INDEX|Nifty Bank...
+2026-06-19 14:35:00 [INFO] ENGINE — [EVAL] Starting evaluation for NSE_INDEX|Nifty Bank
+2026-06-19 14:35:00 [INFO] ENGINE — [EVAL] Fetching 15-minute OHLCV data (3 days)...
+2026-06-19 14:35:00 [INFO] ANGELONE — Candle params: {'exchange': 'NSE', 'symboltoken': '26009', 'interval': 'FIFTEEN_MINUTE', 'fromdate': '2026-06-16 14:35', 'todate': '2026-06-19 14:35'}
+2026-06-19 14:35:00 [DEBUG] urllib3.connectionpool — Starting new HTTPS connection (1): apiconnect.angelone.in:443
+2026-06-19 14:35:01 [DEBUG] urllib3.connectionpool — https://apiconnect.angelone.in:443 "POST /rest/secure/angelbroking/historical/v1/getCandleData HTTP/1.1" 200 60
+2026-06-19 14:35:01 [INFO] ANGELONE — Candle response: {'status': True, 'message': 'SUCCESS', 'errorcode': '', 'data': []}
+2026-06-19 14:35:01 [INFO] ENGINE — [EVAL] Insufficient data: 0 candles (need 20+)
+2026-06-19 14:35:29 [INFO] MAIN — Shutdown signal received
+2026-06-19 14:35:29 [INFO] ENGINE — 🔒 All positions closed

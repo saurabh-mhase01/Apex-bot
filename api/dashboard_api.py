@@ -13,6 +13,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
+import time
+from fastapi import Request
 
 logger = logging.getLogger("API")
 
@@ -20,14 +22,58 @@ logger = logging.getLogger("API")
 _engine = None
 _db = None
 
-app = FastAPI(title="AI Options Bot Dashboard", version="1.0")
+app = FastAPI(title="AI Options Bot Dashboard", version="1.0", redirect_slashes=False)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origin_regex="https://.*\.app\.github\.dev",
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+
+
+@app.middleware("http")
+async def core_activity_logger(request: Request, call_next):
+    start_time = time.time()
+
+    client_ip = request.client.host if request.client else "unknown"
+    method = request.method
+    path = request.url.path
+
+    logger.warning(
+        "REQUEST START | ip=%s method=%s path=%s",
+        client_ip, method, path
+    )
+
+    try:
+        response = await call_next(request)
+
+        process_time = (time.time() - start_time) * 1000
+
+        logger.warning(
+            "REQUEST END | ip=%s method=%s path=%s status=%s time=%.2fms",
+            client_ip,
+            method,
+            path,
+            response.status_code,
+            process_time
+        )
+
+        return response
+
+    except Exception as e:
+        process_time = (time.time() - start_time) * 1000
+
+        logger.exception(
+            "REQUEST ERROR | ip=%s method=%s path=%s time=%.2fms error=%s",
+            client_ip,
+            method,
+            path,
+            process_time,
+            str(e)
+        )
+        raise
 # ── Request Models ─────────────────────────────────────────────────────────────
 class SettingsUpdate(BaseModel):
     total_capital: Optional[float] = None
@@ -207,8 +253,7 @@ async def websocket_endpoint(websocket: WebSocket):
 # ── Serve React frontend ───────────────────────────────────────────────────────
 frontend_dist = Path(__file__).parent / "frontend" / "dist"
 if frontend_dist.exists():
-    app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="static")
-
+    app.mount("/static", StaticFiles(directory=str(frontend_dist), html=True), name="static")
 
 def start_api_server(engine=None, db=None, host="0.0.0.0", port=8000):
     global _engine, _db
@@ -216,4 +261,11 @@ def start_api_server(engine=None, db=None, host="0.0.0.0", port=8000):
         _engine = engine
     if db:
         _db = db
-    uvicorn.run(app, host=host, port=port, log_level="warning")
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        log_level="warning",
+        proxy_headers=True,
+        forwarded_allow_ips="*"
+    )

@@ -18,12 +18,9 @@ from db.database import Database
 from alerts.telegram_alert import TelegramAlerter
 from api.dashboard_api import start_api_server
 
-# ─── IST Timezone Setup ───────────────────────────────────────
-IST = timezone(timedelta(hours=5, minutes=30))
-
-# Custom formatter with IST timezone
-class ISTFormatter(logging.Formatter):
-    converter = lambda *args: datetime.now(IST).timetuple()
+import os
+os.environ["TZ"] = "Asia/Kolkata"
+time.tzset()
 
 # ─── Logging Setup with IST ───────────────────────────────────
 logging.basicConfig(
@@ -36,10 +33,7 @@ logging.basicConfig(
     ]
 )
 
-# Apply IST formatter to all handlers
-formatter = ISTFormatter("%(asctime)s [%(levelname)s] %(name)s — %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-for handler in logging.root.handlers:
-    handler.setFormatter(formatter)
+
 
 logger = logging.getLogger("MAIN")
 
@@ -91,7 +85,16 @@ class OptionsBot:
 
         # Start FastAPI dashboard in background thread
         import threading
-        api_thread = threading.Thread(target=start_api_server, daemon=True)
+        api_thread = threading.Thread(
+            target=start_api_server,
+            kwargs={
+                "engine": self.engine,
+                "db": self.db,
+                "host": "0.0.0.0",
+                "port": 8000
+            },
+            daemon=True
+        )
         api_thread.start()
 
         self.setup_schedule()
