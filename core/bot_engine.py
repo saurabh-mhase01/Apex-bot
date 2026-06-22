@@ -11,7 +11,7 @@ from typing import Dict, Optional, List
 from core.config import Config
 from core.regime_classifier import MarketRegimeClassifier
 from core.risk_guard import RiskGuard
-from data.angelone_broker import AngelOneBroker
+from data.Angle_broker_v2 import AngelOneBroker
 # from data.groww_broker import GrowwBroker
 from strategies.strategy_engine import StrategyEngine, BUY_CE, BUY_PE, NO_TRADE
 from db.database import Database
@@ -27,7 +27,8 @@ class BotEngine:
         self.alerter = alerter
 
         # Initialize AngelOneBroker with paper trading enabled
-        self.broker = AngelOneBroker(paper_trading=config.paper_trading)
+         
+        self.broker = AngelOneBroker()
         
         self.regime_classifier = MarketRegimeClassifier()
         self.strategy_engine = StrategyEngine(config.strategy_weights)

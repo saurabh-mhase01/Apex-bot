@@ -57,7 +57,7 @@ class OptionsBot:
 
     def setup_schedule(self):
         # Pre-market
-        schedule.every().day.at("08:45").do(self.engine.pre_market_analysis)
+        schedule.every().day.at("08:50").do(self.engine.pre_market_analysis)
         schedule.every().day.at("09:00").do(self.engine.compute_daily_regime)
 
         # Market hours — signal checks every 5 minutes
