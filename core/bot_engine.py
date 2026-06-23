@@ -8,6 +8,7 @@ import uuid
 from datetime import datetime, date, timedelta
 from typing import Dict, Optional, List
 
+from data.Angle_broker_v2 import build_strategy_context
 from core.config import Config
 from core.regime_classifier import MarketRegimeClassifier
 from core.risk_guard import RiskGuard
@@ -121,23 +122,114 @@ class BotEngine:
             except Exception as e:
                 logger.info(f"Signal check error for {instrument_key}: {e}", exc_info=True)
 
+    # def _evaluate_instrument(self, instrument_key: str):
+    #     logger.info(f"[EVAL] Starting evaluation for {instrument_key}")
+        
+    #     # Fetch OHLCV data
+    #     logger.info(f"[EVAL] Fetching 15-minute OHLCV data (3 days)...")
+    #     df = self.broker.get_ohlcv(instrument_key, "15minute", days=3)
+    #     if df is None or len(df) < 20:
+    #         logger.info(f"[EVAL] Insufficient data: {len(df) if df is not None else 0} candles (need 20+)")
+    #         return
+    #     logger.info(f"[EVAL] ✅ Got {len(df)} candles")
+
+    #     # Fetch VIX
+    #     logger.info(f"[EVAL] Fetching India VIX...")
+    #     vix = self.broker.get_india_vix() or 15.0
+    #     logger.info(f"[EVAL] VIX: {vix:.2f}")
+        
+    #     # Fetch expiries
+    #     logger.info(f"[EVAL] Fetching option expiries...")
+    #     expiries = self.broker.get_option_expiries(instrument_key)
+    #     expiry = expiries[0] if expiries else None
+    #     if not expiry:
+    #         logger.info(f"[EVAL] No available expiries found")
+    #         return
+    #     logger.info(f"[EVAL] Using expiry: {expiry}")
+
+    #     # Fetch option chain
+    #     logger.info(f"[EVAL] Fetching option chain...")
+    #     chain = self.broker.get_option_chain(instrument_key, expiry)
+    #     chain_list = chain if isinstance(chain, list) else []
+    #     logger.info(f"[EVAL] ✅ Got {len(chain_list)} option contracts")
+
+    #     # Build context for strategies
+    #     logger.info(f"[EVAL] Building strategy context...")
+    #     oi_snap_now = self._build_oi_snapshot(chain_list)
+    #     context = {
+    #         "vix": vix,
+    #         "vix_prev": vix,  # Would store previous VIX in production
+    #         "iv_percentile": 40,  # Would compute from history
+    #         "atm_delta": 0.50,
+    #         "theta_pct": 0.08,
+    #         "skew": 0,
+    #         "chain_snapshot_prev": self._oi_snapshot_prev.get(instrument_key, {}),
+    #         "chain_snapshot_now": oi_snap_now,
+    #         "days_to_expiry": 3,
+    #     }
+    #     logger.info(f"[EVAL] Context prepared: VIX={vix:.2f}, OI_strikes={len(oi_snap_now)}")
+
+    #     # Update OI snapshot
+    #     self._oi_snapshot_prev[instrument_key] = oi_snap_now
+
+    #     # Run strategy engine
+    #     logger.info(f"[EVAL] Running strategy evaluation...")
+    #     signal, score, details = self.strategy_engine.evaluate(df, context)
+    #     logger.info(f"[EVAL] Strategy evaluation complete: score={score:.2%}, signal={signal}")
+
+    #     # Log signal details
+    #     signal_type = "BUY_CE" if signal == BUY_CE else "BUY_PE" if signal == BUY_PE else "NO_TRADE"
+    #     strategies_summary = {k: {"signal": v["signal"], "confidence": v["confidence"]} for k, v in details.items()}
+    #     logger.info(f"[EVAL] Signal details: {signal_type}, Score: {score:.2%}")
+    #     logger.info(f"[EVAL] Strategy breakdown: {json.dumps(strategies_summary, indent=2)}")
+        
+    #     self.db.insert_signal({
+    #         "timestamp": str(datetime.now()),
+    #         "instrument": instrument_key,
+    #         "signal_type": signal_type,
+    #         "score": score,
+    #         "strategies": json.dumps(strategies_summary),
+    #         "regime": self.active_regime,
+    #         "confidence": score,
+    #     })
+    #     logger.info(f"[EVAL] Signal saved to database")
+
+    #     if signal == NO_TRADE:
+    #         logger.info(f"[EVAL] Signal is NO_TRADE, skipping execution")
+    #         return
+        
+    #     if score < 0.38:
+    #         logger.info(f"[EVAL] Score {score:.2%} below threshold (0.38), skipping execution")
+    #         return
+        
+    #     logger.info(f"[EVAL] ✅ Valid signal: {signal_type} with score {score:.2%}")
+
+    #     self._execute_trade(instrument_key, signal, score, details, df, expiry)
+
     def _evaluate_instrument(self, instrument_key: str):
         logger.info(f"[EVAL] Starting evaluation for {instrument_key}")
-        
-        # Fetch OHLCV data
+ 
+        # ── 1. OHLCV candle data ──────────────────────────────────────────────
         logger.info(f"[EVAL] Fetching 15-minute OHLCV data (3 days)...")
         df = self.broker.get_ohlcv(instrument_key, "15minute", days=3)
         if df is None or len(df) < 20:
-            logger.info(f"[EVAL] Insufficient data: {len(df) if df is not None else 0} candles (need 20+)")
+            logger.info(
+                f"[EVAL] Insufficient data: "
+                f"{len(df) if df is not None else 0} candles (need 20+)"
+            )
             return
         logger.info(f"[EVAL] ✅ Got {len(df)} candles")
-
-        # Fetch VIX
+ 
+        # ── 2. India VIX ─────────────────────────────────────────────────────
         logger.info(f"[EVAL] Fetching India VIX...")
         vix = self.broker.get_india_vix() or 15.0
         logger.info(f"[EVAL] VIX: {vix:.2f}")
-        
-        # Fetch expiries
+ 
+        # Previous VIX (stored from last cycle — used for vix_change signal)
+        prev_vix = self.db.get_setting("today_vix") or vix
+        self.db.set_setting("today_vix", vix)          # update for next cycle
+ 
+        # ── 3. Option expiries ────────────────────────────────────────────────
         logger.info(f"[EVAL] Fetching option expiries...")
         expiries = self.broker.get_option_expiries(instrument_key)
         expiry = expiries[0] if expiries else None
@@ -145,65 +237,100 @@ class BotEngine:
             logger.info(f"[EVAL] No available expiries found")
             return
         logger.info(f"[EVAL] Using expiry: {expiry}")
-
-        # Fetch option chain
+ 
+        # Days to expiry — real calendar days, not hardcoded 3
+        try:
+            from datetime import date as _date
+            dte = (datetime.strptime(expiry, "%Y-%m-%d").date() - _date.today()).days
+            dte = max(0, dte)
+        except Exception:
+            dte = 1
+        logger.info(f"[EVAL] Days to expiry: {dte}")
+ 
+        # ── 4. Option chain ───────────────────────────────────────────────────
         logger.info(f"[EVAL] Fetching option chain...")
         chain = self.broker.get_option_chain(instrument_key, expiry)
         chain_list = chain if isinstance(chain, list) else []
         logger.info(f"[EVAL] ✅ Got {len(chain_list)} option contracts")
-
-        # Build context for strategies
+ 
+        # ── 5. ATM strike ─────────────────────────────────────────────────────
+        lot_size = 50 if "Nifty 50" in instrument_key else 25
+        atm = self.broker.get_atm_strike(instrument_key, lot_size) or 0
+ 
+        # ── 6. Strategy context — ALL values from real market data ────────────
         logger.info(f"[EVAL] Building strategy context...")
-        oi_snap_now = self._build_oi_snapshot(chain_list)
-        context = {
-            "vix": vix,
-            "vix_prev": vix,  # Would store previous VIX in production
-            "iv_percentile": 40,  # Would compute from history
-            "atm_delta": 0.50,
-            "theta_pct": 0.08,
-            "skew": 0,
-            "chain_snapshot_prev": self._oi_snapshot_prev.get(instrument_key, {}),
-            "chain_snapshot_now": oi_snap_now,
-            "days_to_expiry": 3,
-        }
-        logger.info(f"[EVAL] Context prepared: VIX={vix:.2f}, OI_strikes={len(oi_snap_now)}")
-
-        # Update OI snapshot
-        self._oi_snapshot_prev[instrument_key] = oi_snap_now
-
-        # Run strategy engine
+        prev_snapshot = self._oi_snapshot_prev.get(instrument_key, {})
+ 
+        context = build_strategy_context(
+            chain               = chain_list,
+            vix                 = vix,
+            atm_strike          = atm,
+            prev_chain_snapshot = prev_snapshot,
+            days_to_expiry      = dte,
+            prev_vix            = prev_vix,
+            underlying_ltp      = df["close"].iloc[-1] if not df.empty else None,
+        )
+ 
+        # Store OI snapshot for next cycle's OI-flow diff
+        self._oi_snapshot_prev[instrument_key] = context.get("chain_snapshot_now", {})
+ 
+        logger.info(
+            f"[EVAL] Context prepared: "
+            f"VIX={vix:.2f}  "
+            f"IVP={context.get('iv_percentile', 0):.1f}th  "
+            f"PCR={context.get('pcr', 1):.2f}  "
+            f"Skew={context.get('skew', 0):+.1f}  "
+            f"Delta={context.get('atm_delta', 0.5):.3f}  "
+            f"Theta={context.get('theta_pct', 0):.3f}  "
+            f"DTE={dte}  ATM={atm}  "
+            f"MaxPain={context.get('max_pain')}  "
+            f"OI_strikes={len(context.get('chain_snapshot_now', {}))}"
+        )
+ 
+        # ── 7. Strategy engine evaluation ─────────────────────────────────────
         logger.info(f"[EVAL] Running strategy evaluation...")
         signal, score, details = self.strategy_engine.evaluate(df, context)
         logger.info(f"[EVAL] Strategy evaluation complete: score={score:.2%}, signal={signal}")
-
-        # Log signal details
-        signal_type = "BUY_CE" if signal == BUY_CE else "BUY_PE" if signal == BUY_PE else "NO_TRADE"
-        strategies_summary = {k: {"signal": v["signal"], "confidence": v["confidence"]} for k, v in details.items()}
+ 
+        signal_type = (
+            "BUY_CE" if signal == BUY_CE else
+            "BUY_PE" if signal == BUY_PE else
+            "NO_TRADE"
+        )
+        strategies_summary = {
+            k: {"signal": v["signal"], "confidence": v["confidence"]}
+            for k, v in details.items()
+        }
+ 
         logger.info(f"[EVAL] Signal details: {signal_type}, Score: {score:.2%}")
         logger.info(f"[EVAL] Strategy breakdown: {json.dumps(strategies_summary, indent=2)}")
-        
+ 
+        # ── 8. Save signal to DB ──────────────────────────────────────────────
         self.db.insert_signal({
-            "timestamp": str(datetime.now()),
-            "instrument": instrument_key,
+            "timestamp":   str(datetime.now()),
+            "instrument":  instrument_key,
             "signal_type": signal_type,
-            "score": score,
-            "strategies": json.dumps(strategies_summary),
-            "regime": self.active_regime,
-            "confidence": score,
+            "score":       score,
+            "strategies":  json.dumps(strategies_summary),
+            "regime":      self.active_regime,
+            "confidence":  score,
         })
         logger.info(f"[EVAL] Signal saved to database")
-
+ 
+        # ── 9. Execute trade if signal is strong enough ───────────────────────
         if signal == NO_TRADE:
             logger.info(f"[EVAL] Signal is NO_TRADE, skipping execution")
             return
-        
+ 
         if score < 0.38:
-            logger.info(f"[EVAL] Score {score:.2%} below threshold (0.38), skipping execution")
+            logger.info(
+                f"[EVAL] Score {score:.2%} below threshold (0.38), skipping execution"
+            )
             return
-        
+ 
         logger.info(f"[EVAL] ✅ Valid signal: {signal_type} with score {score:.2%}")
-
         self._execute_trade(instrument_key, signal, score, details, df, expiry)
+ 
 
     def _execute_trade(self, instrument_key: str, signal: int, score: float,
                        details: Dict, df, expiry: str):

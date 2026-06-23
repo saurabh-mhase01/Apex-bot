@@ -97,6 +97,23 @@ class OptionsBot:
         )
         api_thread.start()
 
+        now = datetime.now().time()
+        market_open  = dtime(9, 15)
+        market_close = dtime(15, 30)
+        
+        if market_open <= now <= market_close:
+            logger.info("🌅 Starting mid-session — bootstrapping regime and VIX...")
+    
+            def _bootstrap():
+                try:
+                    self.engine.pre_market_analysis()   # seeds VIX in DB
+                    self.engine.compute_daily_regime()  # sets active_regime / confidence
+                    logger.info("✅ Bootstrap complete")
+                except Exception as e:
+                    logger.error(f"Bootstrap error: {e}")
+    
+            bootstrap_thread = threading.Thread(target=_bootstrap, daemon=True)
+            bootstrap_thread.start()
         self.setup_schedule()
 
         def shutdown(sig, frame):
