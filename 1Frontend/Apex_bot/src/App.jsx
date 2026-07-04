@@ -587,7 +587,7 @@ export default function App() {
         {tab === "Strategies" && (
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Strategy Engine</h2>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: C.text }}>Strategy Engine</h2>
               <div style={{ display: "flex", gap: 8 }}>
                 {editingWeights ? (
                   <>
@@ -768,9 +768,9 @@ export default function App() {
         {tab === "Backtest" && (
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Backtest Results</h2>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: C.text }}>Backtest Results</h2>
               <button
-                onClick={() => showToast("Backtest started in background")}
+                onClick={async () => { await api.runBacktest(); showToast("Backtest started in background"); }}
                 style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: C.limeGlow, border: `1px solid ${C.limeD}`, borderRadius: 7, color: C.lime, cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
                 <RefreshCw size={13} /> Run New Backtest
               </button>

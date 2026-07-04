@@ -1,6 +1,6 @@
 """
 AI Options Buyer Bot — Main Entry Point
-Nifty & Bank Nifty | Upstox API | Self-Learning
+Nifty & Bank Nifty | Angel One API | Self-Learning
 """
 
 import asyncio
@@ -14,6 +14,7 @@ from pathlib import Path
 
 from core.bot_engine import BotEngine
 from core.config import Config
+from core.regime_classifier import NO_DATA_REGIME
 from db.database import Database
 from alerts.telegram_alert import TelegramAlerter
 from api.dashboard_api import start_api_server
@@ -22,9 +23,8 @@ import os
 os.environ["TZ"] = "Asia/Kolkata"
 time.tzset()
 
-# ─── Logging Setup with IST ───────────────────────────────────
 logging.basicConfig(
-    level=logging.DEBUG,  # DEBUG level for comprehensive logging
+    level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(name)s — %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[
@@ -33,18 +33,10 @@ logging.basicConfig(
     ]
 )
 
-
-
 logger = logging.getLogger("MAIN")
 
-# Suppress verbose library logs — keep only bot logs
-logging.getLogger("urllib3").setLevel(logging.DEBUG)
-logging.getLogger("requests").setLevel(logging.DEBUG)
-logging.getLogger("asyncio").setLevel(logging.DEBUG)
-logging.getLogger("schedule").setLevel(logging.DEBUG)
-
 # Enable DEBUG for our modules
-for module in ["MAIN", "ENGINE", "GROWW", "TELEGRAM"]:
+for module in ["MAIN", "ENGINE", "ANGELONE", "REGIME", "RISK", "STRATEGY", "DATABASE", "CONFIG", "TELEGRAM"]:
     logging.getLogger(module).setLevel(logging.DEBUG)
 
 class OptionsBot:
@@ -56,34 +48,29 @@ class OptionsBot:
         self.running = False
 
     def setup_schedule(self):
-        # Pre-market
         schedule.every().day.at("08:50").do(self.engine.pre_market_analysis)
         schedule.every().day.at("09:00").do(self.engine.compute_daily_regime)
 
-        # Market hours — signal checks every 5 minutes
         for h in range(9, 15):
             for m in range(0, 60, 5):
                 t = f"{h:02d}:{m:02d}"
                 if t >= "09:15" and t <= "15:25":
                     schedule.every().day.at(t).do(self.engine.check_signals)
 
-        # Intraday management
         schedule.every().day.at("13:00").do(self.engine.mid_day_review)
         schedule.every().day.at("15:00").do(self.engine.pre_close_review)
         schedule.every().day.at("15:25").do(self.engine.force_exit_all)
 
-        # Post-market
         schedule.every().day.at("15:35").do(self.engine.post_market_log)
         schedule.every().sunday.at("21:00").do(self.engine.weekly_backtest_and_retrain)
 
-        logger.info("✅ Schedule configured")
+        logger.info("[MAIN]-> SCHEDULE configured")
 
     def run(self):
         self.running = True
-        logger.info("🚀 AI Options Bot starting...")
+        logger.info("[MAIN] AI Options Bot starting...")
         self.alerter.send("🤖 Bot started and monitoring markets")
 
-        # Start FastAPI dashboard in background thread
         import threading
         api_thread = threading.Thread(
             target=start_api_server,
@@ -100,24 +87,32 @@ class OptionsBot:
         now = datetime.now().time()
         market_open  = dtime(9, 15)
         market_close = dtime(15, 30)
-        
+
         if market_open <= now <= market_close:
-            logger.info("🌅 Starting mid-session — bootstrapping regime and VIX...")
+            logger.info("[MAIN] Starting mid-session — bootstrapping regime and VIX...")
     
             def _bootstrap():
                 try:
-                    self.engine.pre_market_analysis()   # seeds VIX in DB
-                    self.engine.compute_daily_regime()  # sets active_regime / confidence
-                    logger.info("✅ Bootstrap complete")
+                    self.engine.pre_market_analysis()
+                    self.engine.compute_daily_regime()
+                    if self.engine.active_regime == NO_DATA_REGIME:
+                        logger.warning(
+                            "[MAIN] Bootstrap finished but regime is still "
+                            f"{NO_DATA_REGIME} — check ANGELONE_* credentials and "
+                            "broker connectivity in the logs above. check_signals() "
+                            "will keep skipping until a real regime is computed."
+                        )
+                    else:
+                        logger.info(f"[MAIN] Bootstrap complete — regime={self.engine.active_regime}")
                 except Exception as e:
-                    logger.error(f"Bootstrap error: {e}")
-    
+                    logger.error(f"[MAIN] Bootstrap error: {e}", exc_info=True)
+ 
             bootstrap_thread = threading.Thread(target=_bootstrap, daemon=True)
             bootstrap_thread.start()
         self.setup_schedule()
 
         def shutdown(sig, frame):
-            logger.info("Shutdown signal received")
+            logger.info("[MAIN] Shutdown signal received")
             self.engine.force_exit_all()
             self.running = False
             sys.exit(0)

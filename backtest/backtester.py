@@ -79,8 +79,8 @@ class Backtester:
         self.regime_clf = MarketRegimeClassifier()
 
     def run(self, df: pd.DataFrame, lot_size: int = 50,
-            sl_pct: float = 0.28, t1_pct: float = 0.50, t2_pct: float = 1.00,
-            min_confidence: float = 0.38) -> BacktestResult:
+        sl_pct: float = 0.28, t1_pct: float = 0.50, t2_pct: float = 1.00,
+        min_confidence: float = 0.38, vix_series: pd.Series = None) -> BacktestResult:
 
         result = BacktestResult()
         capital = self.initial_capital
@@ -91,9 +91,10 @@ class Backtester:
         for i in range(window, len(df) - 5):
             slice_df = df.iloc[i - window:i]
             future_df = df.iloc[i:i + 8]  # Next 2 hours
-
+            
             try:
-                regime, conf, features = self.regime_clf.classify(slice_df)
+                vix_at_i = float(vix_series.iloc[i]) if vix_series is not None else 15.0
+                regime, conf, features = self.regime_clf.classify(slice_df, vix_at_i)
                 signal, score = self._simple_signal(slice_df, features)
 
                 if signal == 0 or score < min_confidence:
@@ -150,6 +151,7 @@ class Backtester:
                 })
 
             except Exception as e:
+                logger.debug(f"[BACKTEST] window {i} skipped: {e}")
                 continue
 
         return result

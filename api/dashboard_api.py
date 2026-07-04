@@ -221,10 +221,9 @@ def get_backtest_results():
 
 @app.post("/api/backtest/run")
 def run_backtest():
-    """Trigger backtest (async in background)"""
     import threading
     def _run():
-        _engine.weekly_backtest_and_retrain()
+        _engine.run_full_backtest()
     t = threading.Thread(target=_run, daemon=True)
     t.start()
     return {"success": True, "message": "Backtest started in background"}

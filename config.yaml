@@ -1,34 +1,30 @@
-# ── Groww API (Recommended) ────────────────────────────────────
-# groww_api_key: "eyJraWQiOiJaTUtjVXciLCJhbGciOiJFUzI1NiJ9.eyJleHAiOjI1NzAxNjQ0NjksImlhdCI6MTc4MTc2NDQ2OSwibmJmIjoxNzgxNzY0NDY5LCJzdWIiOiJ7XCJ0b2tlblJlZklkXCI6XCI2Yjk4ZDI2ZC0yMmZlLTQ3N2YtOTU0MS1lMWIyZmE0ZTNhZmZcIixcInZlbmRvckludGVncmF0aW9uS2V5XCI6XCJlMzFmZjIzYjA4NmI0MDZjODg3NGIyZjZkODQ5NTMxM1wiLFwidXNlckFjY291bnRJZFwiOlwiOWUzYTU2YzAtOTRkYi00YmZmLTg2NzYtMTBmNjYwZDNjNzg4XCIsXCJkZXZpY2VJZFwiOlwiYjE2NGEyMTgtYmZkZC01NzU4LWFiMDQtNmUxNThhNDA4NTk4XCIsXCJzZXNzaW9uSWRcIjpcIjFhMzFiYTcyLThkYzctNDMxZS04ZGRmLWU4Y2Y5NTU2NDE3ZVwiLFwiYWRkaXRpb25hbERhdGFcIjpcIno1NC9NZzltdjE2WXdmb0gvS0EwYkdPZ3pPM25hQ215LzVKelpXWUlQN3RSTkczdTlLa2pWZDNoWjU1ZStNZERhWXBOVi9UOUxIRmtQejFFQisybTdRPT1cIixcInJvbGVcIjpcImF1dGgtdG90cFwiLFwic291cmNlSXBBZGRyZXNzXCI6XCIxMjIuMTc5LjE1OC4yMDYsMTcyLjcxLjIwMi40NSwzNS4yNDEuMjMuMTIzXCIsXCJ0d29GYUV4cGlyeVRzXCI6MjU3MDE2NDQ2OTc4OCxcInZlbmRvck5hbWVcIjpcImdyb3d3QXBpXCJ9IiwiaXNzIjoiYXBleC1hdXRoLXByb2QtYXBwIn0.13Wbaix-o4BKU5_5lAhzkFcqqgnW3wQNufYNfmpgQWMjEouT17mwWTYYT0ODD_bX4mzOECn8FGUaAHljXLDzlA"
-# groww_api_secret: "Z-gbFr!BaR6gyTjfIlXK9AUCR7Nv8J%r"
-# groww_totp_token: ""        # TOTP token (recommended — no daily expiry)
-# groww_totp_secret: ""       # TOTP secret for auto-generation
-angleone_api_key: "JGMUJJ4n"       # Angel One API Key
-angleone_client_id: "S62103272"          # Angel One Client ID (often same as API Key)
-angleone_password: "5763"        # Angel One account password
-angleone_totp_secret: "OJOAT3LK5KW5M3U4LXJSHHZSDA"     # Angel One TOTP secret for 2FA (recommended)
-# ── Legacy Upstox (optional) ────────────────────────────────────
-# upstox_api_key: ""
-# upstox_api_secret: ""
-# upstox_access_token: ""
-# ── Telegram Alerts ────────────────────────────────────
-telegram_token: ""          # From @BotFather on Telegram
-telegram_chat_id: ""        # Your Telegram chat ID
-# ── Capital & Risk ─────────────────────────────────────
+angleone_api_key: "JGMUJJ4n"
+angleone_client_id: "S62103272"
+angleone_password: "5763"
+angleone_totp_secret: "OJOAT3LK5KW5M3U4LXJSHHZSDA"
+telegram_token: ""
+telegram_chat_id: ""
 total_capital: 10000.0
 max_risk_per_trade_pct: 0.15
 max_daily_loss_pct: 0.25
 max_open_trades: 2
 min_reward_risk: 1.5
-# ── Trading Mode ───────────────────────────────────────
-paper_trading: true          # Set false only after paper testing
-auto_trade: false            # Set true to auto-execute signals
-
-# ── Instruments ────────────────────────────────────────
+paper_trading: true
+auto_trade: false
 instruments:
   - "NSE_INDEX|Nifty 50"
   - "NSE_INDEX|Nifty Bank"
-
-# ── Database ───────────────────────────────────────────
 db_path: "data/bot.db"
 model_path: "ml/models/"
+strategy_weights:
+  smc: 0.16
+  orb: 0.13
+  greeks: 0.13
+  fib_sr: 0.11
+  vix: 0.09
+  oi_flow: 0.11
+  iv_skew: 0.07
+  bb_squeeze: 0.05
+  mtf: 0.09
+  psych: 0.04
+  gamma_scalp: 0.02

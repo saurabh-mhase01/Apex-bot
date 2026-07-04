@@ -11,10 +11,6 @@ from typing import Optional, List, Dict, Any
 
 logger = logging.getLogger("DATABASE")
 
-
-import logging
-logger = logging.getLogger("DATABASE")
-
 class Database:
     def __init__(self, db_path: str = "data/bot.db"):
         logger.info(f"[DB] Initializing database at {db_path}")
@@ -241,7 +237,7 @@ class Database:
 
     # ── Regime Log ─────────────────────────────────────────────
     def log_regime(self, data: dict):
-        regime_type = data.get('regime_type', 'UNKNOWN')
+        regime_type = data.get('regime')
         confidence = data.get('confidence', 0)
         logger.info(f"[DB] Logging regime: {regime_type} (confidence={confidence:.0%})")
         with self._conn() as conn:
@@ -312,3 +308,20 @@ class Database:
             else:
                 stats["win_rate"] = 0
             return stats
+        
+    def insert_backtest_result(self, result: dict):
+        if "error" in result or "total_trades" not in result:
+            logger.warning(f"[DB] Skipping backtest_result insert — incomplete result: {result}")
+            return
+        with self._conn() as conn:
+            conn.execute("""
+                INSERT INTO backtest_results
+                (period_start, period_end, run_date, total_trades, win_rate,
+                avg_return, max_drawdown, sharpe_ratio, total_return, equity_curve)
+                VALUES (?,?,?,?,?,?,?,?,?,?)
+            """, [
+                result["period_start"], result["period_end"], str(datetime.now()),
+                result["total_trades"], result["win_rate"], result.get("avg_win", 0),
+                result["max_drawdown_pct"], result["sharpe_ratio"],
+                result["total_return_pct"], json.dumps(result["equity_curve"]),
+            ])
