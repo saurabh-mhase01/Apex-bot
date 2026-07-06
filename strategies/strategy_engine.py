@@ -1,4 +1,5 @@
 import logging
+import math
 import numpy as np
 import pandas as pd
 from typing import Dict, Tuple, List, Optional
@@ -399,17 +400,28 @@ class MTFConfluenceStrategy(BaseStrategy):
         )
         dfs     = {"1D": df_1d, "1H": df_1h, "15M": df_15m, "5M": df_5m}
         signals = {}
+        min_candles = 21
         for tf, df in dfs.items():
-            if df is None or len(df) < 5:
+            if df is None or len(df) < min_candles:
+                logger.info(f"[MTF] skip {tf} (candles={0 if df is None else len(df)})")
                 continue
+
             e9    = ema(df["close"], 9).iloc[-1]
             e21   = ema(df["close"], 21).iloc[-1]
             r     = rsi(df["close"]).iloc[-1]
             price = df["close"].iloc[-1]
             v     = vwap(df["high"], df["low"], df["close"], df["volume"]).iloc[-1]
-            if   e9 > e21 and r > 50 and price > v: signals[tf] = BUY_CE
-            elif e9 < e21 and r < 50 and price < v: signals[tf] = BUY_PE
-            else:                                    signals[tf] = NO_TRADE
+
+            if pd.isna(e9) or pd.isna(e21) or pd.isna(r) or pd.isna(v):
+                logger.warning(f"[MTF] skip {tf} due to NaN indicators")
+                continue
+
+            if   e9 > e21 and r > 50 and price > v:
+                signals[tf] = BUY_CE
+            elif e9 < e21 and r < 50 and price < v:
+                signals[tf] = BUY_PE
+            else:
+                signals[tf] = NO_TRADE
 
         logger.info(f"[MTF] FEATURES: per_timeframe_signals={signals}")
 

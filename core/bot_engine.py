@@ -6,7 +6,7 @@ import json
 import logging
 import uuid
 from datetime import datetime, date, timedelta
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Tuple
 
 from data.Angle_broker_v2 import build_strategy_context
 from core.config import Config
@@ -512,20 +512,20 @@ class BotEngine:
     def run_full_backtest(self, instrument_key: str = "NSE_INDEX|Nifty 50", days: int = 90):
         logger.info(f"[BACKTEST] Running walk-forward backtest for {instrument_key}, {days} days")
         
-        df = self.broker.get_ohlcv(instrument_key, "15minute", days=days, use_db_fallback=True)
-        if df is None or len(df) < 50:
-            logger.error(f"[BACKTEST] Not enough candle history ({0 if df is None else len(df)}) — aborting")
-            return
         bt = Backtester(initial_capital=self.capital)
-        vix_df = self.broker.get_ohlcv("NSE_INDEX|India VIX", "15minute", days=days, use_db_fallback=True)
-        vix_series = vix_df["close"].reindex(df.index, method="ffill") if not vix_df.empty else None
-        result = bt.run(df, min_confidence=self.strategy_engine.min_score, vix_series=vix_series)
+        result = bt.run_real(
+            broker=self.broker,
+            strategy_engine=self.strategy_engine,
+            instrument_key=instrument_key,
+            days=days,
+            min_confidence=self.strategy_engine.min_score,
+        )
         stats = result.compute_stats(self.capital)
         if "error" in stats:
             logger.warning(f"[BACKTEST] {stats['error']} — nothing to persist")
             return stats
-        stats["period_start"] = str(df.index.min())
-        stats["period_end"] = str(df.index.max())
+        stats["period_start"] = result.period_start
+        stats["period_end"] = result.period_end
         self.db.insert_backtest_result(stats)
         logger.info(f"[BACKTEST] OUTPUT: {stats}")
         return stats

@@ -10,7 +10,9 @@ import pandas as pd
 import numpy as np
 
 from data.indicators import rsi, ema, adx, bollinger_bands, vwap, market_structure
-from core.regime_classifier import MarketRegimeClassifier
+from data.Angle_broker_v2 import AngelOneBroker
+from core.regime_classifier import MarketRegimeClassifier, NO_DATA_REGIME
+from strategies.strategy_engine import StrategyEngine, BUY_CE, BUY_PE, NO_TRADE
 
 logger = logging.getLogger("BACKTEST")
 
@@ -19,6 +21,8 @@ class BacktestResult:
     def __init__(self):
         self.trades: List[Dict] = []
         self.equity_curve: List[float] = []
+        self.period_start: str = ""
+        self.period_end: str = ""
 
     def compute_stats(self, initial_capital: float) -> Dict:
         if not self.trades:
@@ -153,6 +157,144 @@ class Backtester:
             except Exception as e:
                 logger.debug(f"[BACKTEST] window {i} skipped: {e}")
                 continue
+
+        return result
+
+    def run_real(
+        self,
+        broker: AngelOneBroker,
+        strategy_engine: StrategyEngine,
+        instrument_key: str,
+        days: int = 90,
+        lot_size: int = 50,
+        sl_pct: float = 0.28,
+        t1_pct: float = 0.50,
+        t2_pct: float = 1.00,
+        min_confidence: float = 0.38,
+    ) -> BacktestResult:
+        """Run a historical backtest using real broker OHLCV and VIX data."""
+        result = BacktestResult()
+        capital = self.initial_capital
+        result.equity_curve.append(capital)
+
+        logger.info(f"[BACKTEST_REAL] fetching OHLCV for {instrument_key} ({days} days)")
+        df_15m = broker.get_ohlcv(instrument_key, "15minute", days=days, use_db_fallback=True)
+        if df_15m is None or len(df_15m) < 50:
+            logger.error(f"[BACKTEST_REAL] Not enough 15m history ({0 if df_15m is None else len(df_15m)})")
+            return result
+
+        result.period_start = str(df_15m.index.min())
+        result.period_end = str(df_15m.index.max())
+
+        df_5m = broker.get_ohlcv(instrument_key, "5minute", days=days, use_db_fallback=True)
+        if df_5m is None:
+            df_5m = pd.DataFrame()
+        df_1h = broker.get_ohlcv(instrument_key, "1hour", days=days, use_db_fallback=True)
+        if df_1h is None:
+            df_1h = pd.DataFrame()
+        df_1d = broker.get_ohlcv(instrument_key, "1day", days=days, use_db_fallback=True)
+        if df_1d is None:
+            df_1d = pd.DataFrame()
+        vix_df = broker.get_ohlcv("NSE_INDEX|India VIX", "15minute", days=days, use_db_fallback=True)
+        if vix_df is None:
+            vix_df = pd.DataFrame()
+
+        if vix_df.empty:
+            logger.warning("[BACKTEST_REAL] No VIX history available — VIX-dependent strategies will be skipped")
+
+        vix_series = vix_df["close"].reindex(df_15m.index, method="ffill") if not vix_df.empty else pd.Series([np.nan] * len(df_15m), index=df_15m.index)
+
+        window = 30
+        for i in range(window, len(df_15m) - 5):
+            slice_df = df_15m.iloc[i - window:i]
+            ts = slice_df.index[-1]
+
+            if slice_df.empty:
+                continue
+
+            vix_at_i = None
+            if i < len(vix_series) and not np.isnan(vix_series.iloc[i]):
+                vix_at_i = float(vix_series.iloc[i])
+            else:
+                recent = vix_series.loc[:ts].dropna()
+                if not recent.empty:
+                    vix_at_i = float(recent.iloc[-1])
+
+            if vix_at_i is None:
+                logger.warning(f"[BACKTEST_REAL] skipping {ts} due to missing VIX")
+                continue
+
+            current_5m = df_5m.loc[:ts] if not df_5m.empty else pd.DataFrame()
+            current_1h = df_1h.loc[:ts] if not df_1h.empty else pd.DataFrame()
+            current_1d = df_1d.loc[:ts] if not df_1d.empty else pd.DataFrame()
+
+            regime, regime_conf, _ = self.regime_clf.classify(slice_df, vix_at_i)
+            if regime == NO_DATA_REGIME:
+                continue
+
+            context = {
+                "df_1d": current_1d,
+                "df_1h": current_1h,
+                "df_15m": slice_df,
+                "df_5m": current_5m,
+                "vix": vix_at_i,
+                "vix_prev": vix_series.loc[:ts].iloc[-2] if len(vix_series.loc[:ts].dropna()) >= 2 else vix_at_i,
+            }
+
+            signal, score, details = strategy_engine.evaluate(slice_df, context, regime, regime_conf)
+            if signal == NO_TRADE or score < min_confidence:
+                continue
+
+            future_df = df_15m.iloc[i:i + 8]
+            if future_df.empty:
+                continue
+
+            entry_price = future_df["close"].iloc[0]
+            if entry_price <= 0:
+                continue
+
+            sl = entry_price * (1 - sl_pct)
+            t1 = entry_price * (1 + t1_pct)
+            t2 = entry_price * (1 + t2_pct)
+
+            pnl = 0.0
+            exit_reason = "TIMEOUT"
+            exit_price = future_df["close"].iloc[-1]
+
+            for _, candle in future_df.iterrows():
+                if candle["low"] <= sl:
+                    exit_price = sl
+                    pnl = (sl - entry_price) * lot_size * (1 if signal == BUY_PE else 1)
+                    exit_reason = "SL_HIT"
+                    break
+                if candle["high"] >= t2:
+                    exit_price = t2
+                    pnl = (t2 - entry_price) * lot_size
+                    exit_reason = "T2_HIT"
+                    break
+                if candle["high"] >= t1:
+                    exit_price = t1
+                    pnl = (t1 - entry_price) * lot_size
+                    exit_reason = "T1_HIT"
+                    break
+
+            if exit_reason == "TIMEOUT":
+                pnl = (exit_price - entry_price) * lot_size
+
+            capital += pnl
+            result.equity_curve.append(capital)
+            result.trades.append({
+                "entry_time": str(ts),
+                "entry_price": entry_price,
+                "exit_price": exit_price,
+                "pnl": round(pnl, 2),
+                "pnl_pct": round((exit_price - entry_price) / entry_price * 100, 2),
+                "signal": "CE" if signal == BUY_CE else "PE",
+                "regime": regime,
+                "confidence": score,
+                "exit_reason": exit_reason,
+                "strategies_voted": [k for k, v in details.items() if v["signal"] == signal],
+            })
 
         return result
 
