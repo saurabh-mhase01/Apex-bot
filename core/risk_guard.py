@@ -112,33 +112,23 @@ class RiskGuard:
             logger.warning("⚠️ Trading in last 30 mins — elevated risk")
         return True, ""
 
-    def position_size(self, capital: float, confidence: float, lot_size: int) -> int:
-        """
-        Kelly Criterion-inspired sizing. Returns number of LOTS (minimum 1).
-
-        lot_size is REQUIRED — no default. A wrong/guessed lot size directly
-        changes real position value; the caller (bot_engine) must fetch the
-        real lot size from the broker (AngelOneBroker.get_lot_size) and pass
-        it in. If the broker can't resolve a real lot size, do not call this
-        function — abort the trade instead.
-        """
-        logger.info(f"[RISK_POSITION_SIZE] INPUT: capital={capital}, confidence={confidence}, lot_size={lot_size}")
-
+    def position_size(self, capital: float, confidence: float, lot_size: int, premium: float) -> int:
+        logger.info(f"[RISK_POSITION_SIZE] INPUT: capital={capital}, confidence={confidence}, "
+                    f"lot_size={lot_size}, premium={premium}")
         if not lot_size or lot_size <= 0:
-            logger.error(f"[RISK_POSITION_SIZE] Invalid lot_size={lot_size} — cannot size position")
             raise ValueError(f"position_size() requires a real lot_size, got {lot_size}")
+        if not premium or premium <= 0:
+            raise ValueError(f"position_size() requires a real premium, got {premium}")
 
         base_risk = capital * self.config.max_risk_per_trade_pct
-        # Scale with confidence: 50% conf → 70% of base, 90% conf → 130% of base
-        scaling = 0.4 + confidence
-        adjusted = base_risk * scaling
-        adjusted = min(adjusted, capital * 0.20)  # Hard cap 20%
-        lots = max(1, int(adjusted / (lot_size * 100)))  # Rough lot cost
+        scaling   = 0.4 + confidence
+        adjusted  = min(base_risk * scaling, capital * 0.20)
+        # BUG FIX: previously divided by (lot_size * 100), a flat guess for premium.
+        # Use the actual fetched premium so sizing reflects real capital at risk.
+        lots = max(1, int(adjusted / (lot_size * premium)))
 
-        logger.info(
-            f"[RISK_POSITION_SIZE] OUTPUT: base_risk={base_risk:.2f}, scaling={scaling:.2f}, "
-            f"adjusted={adjusted:.2f}, lots={lots}"
-        )
+        logger.info(f"[RISK_POSITION_SIZE] OUTPUT: base_risk={base_risk:.2f}, scaling={scaling:.2f}, "
+                    f"adjusted={adjusted:.2f}, lots={lots}")
         return lots
 
     def calculate_sl_target(self, entry_price: float, signal: int, regime: str) -> Dict:

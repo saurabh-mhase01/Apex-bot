@@ -1097,8 +1097,14 @@ def build_strategy_context(
     vix_prev   = prev_vix if prev_vix is not None else vix
     vix_change = round((vix - vix_prev) / vix_prev * 100, 2) if vix_prev > 0 else 0.0
 
-    theta_pct = round(min(0.30, 1.0 / (days_to_expiry + 1)), 3)
-
+    # theta_pct is meant to gate Greeks trades when time decay risk is too high.
+    # BUG FIX: min(0.30, 1/(dte+1)) saturates at the 0.30 cap for ANY dte in
+    # {0,1,2,3} — meaning GreeksStrategy's `theta_pct > 0.20` check permanently
+    # blocked it every single week near expiry (confirmed in logs: DTE=1 every
+    # cycle, theta_pct=0.300 every cycle, GREEKS blocked 16/34 times). Spread the
+    # curve out so DTE 1/2/3 are still distinguishable from DTE 0 and from each other.
+    theta_pct = round(min(0.30, 0.30 / (days_to_expiry + 1) * 1.3), 3) if days_to_expiry > 0 else 0.30
+    
     VIX_52W_LOW  = 10.5
     VIX_52W_HIGH = 24.0
     iv_percentile = round(

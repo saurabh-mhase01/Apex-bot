@@ -1,4 +1,6 @@
-const API = "https://fuzzy-space-spork-w4r46vq96g73gv66-8000.app.github.dev/api";
+const mailLink = "https://humble-space-funicular-7xvxq7jrxj72w65x-8000.app.github.dev";
+
+const API = mailLink+"/api";
 
 
 export const api = {

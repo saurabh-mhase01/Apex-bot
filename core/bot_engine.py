@@ -31,6 +31,7 @@ class BotEngine:
         self.config = config
         self.db     = db
         self.alerter = alerter
+        self._tf_cache: Dict[str, Tuple[datetime, pd.DataFrame]] = {}
 
         self.broker             = AngelOneBroker(
             db_path=config.db_path,
@@ -62,6 +63,14 @@ class BotEngine:
             f"auto_trade={config.auto_trade}, instruments={config.instruments}"
         )
 
+    def _get_ohlcv_cached(self, instrument_key: str, interval: str, days: int, ttl_minutes: int):
+        key = f"{instrument_key}:{interval}"
+        cached = self._tf_cache.get(key)
+        if cached and (datetime.now() - cached[0]).total_seconds() < ttl_minutes * 60:
+            return cached[1]
+        df = self.broker.get_ohlcv(instrument_key, interval, days=days)
+        self._tf_cache[key] = (datetime.now(), df)
+        return df
     # ── Lifecycle ─────────────────────────────────────────────────────────────
     def pre_market_analysis(self):
         logger.info("🌅 [PRE_MARKET] INPUT: (none)")
@@ -155,6 +164,20 @@ class BotEngine:
             return
         logger.info(f"[EVAL] {instrument_key}: got {len(df)} candles")
 
+        df_5m = df_1h = df_1d = None
+        try:
+            df_5m = self.broker.get_ohlcv(instrument_key, "5minute", days=2)
+        except Exception as e:
+            logger.warning(f"[EVAL] {instrument_key}: 5m fetch failed: {e}")
+        try:
+            df_1h = self._get_ohlcv_cached(instrument_key, "1hour", 10, ttl_minutes=20)
+        except Exception as e:
+            logger.warning(f"[EVAL] {instrument_key}: 1h fetch failed: {e}")
+        try:
+            df_1d = self._get_ohlcv_cached(instrument_key, "1day", 60, ttl_minutes=120)
+        except Exception as e:
+            logger.warning(f"[EVAL] {instrument_key}: 1D fetch failed: {e}")
+
         # ── 2. India VIX — REQUIRED, no fake fallback ──────────────────────────
         live_vix = self.broker.get_india_vix()
         if live_vix is None:
@@ -211,6 +234,10 @@ class BotEngine:
             prev_vix            = prev_vix,
             underlying_ltp      = df["close"].iloc[-1] if not df.empty else None,
         )
+        context["df_1d"]  = df_1d
+        context["df_1h"]  = df_1h
+        context["df_15m"] = df  # the 15-min df we already fetched
+        context["df_5m"]  = df_5m
         self._oi_snapshot_prev[instrument_key] = context.get("chain_snapshot_now", {})
         #logger.info(f"[EVAL] {instrument_key}: context={context}")
 
@@ -282,7 +309,7 @@ class BotEngine:
         logger.info(f"[TRADE] {opt_key}: premium=₹{premium:.2f}")
 
         try:
-            qty = max(1, self.risk_guard.position_size(self.capital, score, lot_size)) * lot_size
+            qty = max(1, self.risk_guard.position_size(self.capital, score, lot_size, premium)) * lot_size
         except ValueError as e:
             logger.error(f"[TRADE] position sizing failed: {e} — aborting trade")
             return

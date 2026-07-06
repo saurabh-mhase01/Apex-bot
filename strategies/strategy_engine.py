@@ -93,26 +93,50 @@ class ORBStrategy(BaseStrategy):
             logger.info("[ORB] OUTPUT: NO_TRADE (insufficient data)")
             return NO_TRADE, 0, "Insufficient data"
         try:
-            orb_high  = df["high"].iloc[0]
-            orb_low   = df["low"].iloc[0]
+            # BUG FIX: df.iloc[0] used to grab the first candle of the ENTIRE
+            # multi-day fetch window (i.e. a candle from days ago), not today's
+            # actual opening range. Filter to today's session first.
+            today = df.index[-1].date()
+            today_df = df[df.index.date == today]
+            if len(today_df) < 2:
+                logger.info("[ORB] OUTPUT: NO_TRADE (no candles for today's session yet)")
+                return NO_TRADE, 0, "No candles for today's session yet"
+
+            orb_high  = today_df["high"].iloc[0]
+            orb_low   = today_df["low"].iloc[0]
             orb_range = orb_high - orb_low
             vwap_val  = vwap(df["high"], df["low"], df["close"], df["volume"]).iloc[-1]
             close     = df["close"].iloc[-1]
-            vol_avg   = df["volume"].rolling(10).mean().iloc[-1]
-            vol_now   = df["volume"].iloc[-1]
-            vol_surge = vol_now > vol_avg * 1.3
+
+            # BUG FIX: index instruments (NSE_INDEX|...) report volume=0 on every
+            # candle from Angel One's historical API — vol_surge was permanently
+            # False, so ORB could never fire regardless of price action. Detect
+            # zero-volume data and fall back to a range-expansion confirmation
+            # (current candle range vs recent average range) instead.
+            vol_avg = df["volume"].rolling(10).mean().iloc[-1]
+            vol_now = df["volume"].iloc[-1]
+            has_real_volume = df["volume"].sum() > 0
+
+            if has_real_volume:
+                confirm = vol_now > vol_avg * 1.3
+                confirm_reason = "vol surge"
+            else:
+                rng_avg = (df["high"] - df["low"]).rolling(10).mean().iloc[-1]
+                rng_now = df["high"].iloc[-1] - df["low"].iloc[-1]
+                confirm = rng_now > rng_avg * 1.2
+                confirm_reason = "range expansion (no real volume data)"
 
             logger.info(f"[ORB] FEATURES: orb_high={orb_high}, orb_low={orb_low}, vwap={vwap_val:.2f}, "
-                        f"close={close:.2f}, vol_now={vol_now}, vol_avg={vol_avg}, vol_surge={vol_surge}")
+                        f"close={close:.2f}, has_real_volume={has_real_volume}, confirm={confirm} ({confirm_reason})")
 
-            if close > orb_high * 1.001 and close > vwap_val and vol_surge:
+            if close > orb_high * 1.001 and close > vwap_val and confirm:
                 conf = 0.75 if orb_range > 30 else 0.60
                 logger.info(f"[ORB] OUTPUT: BUY_CE conf={conf}")
-                return BUY_CE, conf, "ORB breakout UP, VWAP confirmed, vol surge"
-            if close < orb_low * 0.999 and close < vwap_val and vol_surge:
+                return BUY_CE, conf, f"ORB breakout UP, VWAP confirmed, {confirm_reason}"
+            if close < orb_low * 0.999 and close < vwap_val and confirm:
                 conf = 0.75 if orb_range > 30 else 0.60
                 logger.info(f"[ORB] OUTPUT: BUY_PE conf={conf}")
-                return BUY_PE, conf, "ORB breakdown DOWN, below VWAP"
+                return BUY_PE, conf, f"ORB breakdown DOWN, below VWAP, {confirm_reason}"
             logger.info("[ORB] OUTPUT: NO_TRADE (price within ORB range)")
             return NO_TRADE, 0, "Price within ORB range"
         except Exception as e:
@@ -558,7 +582,7 @@ class StrategyEngine:
 
         for strategy in self.strategies:
             try:
-                sig, conf, reason = strategy.signal(df, **context)
+                sig, conf, reason = strategy.signal(df=df, **context)
                 results[strategy.name] = {
                     "signal":     sig,
                     "confidence": conf,

@@ -2,6 +2,9 @@
 import numpy as np
 import pandas as pd
 from typing import Tuple, Optional
+import logging; 
+
+logger = logging.getLogger("INDICATORS")
 
 
 def ema(series: pd.Series, period: int) -> pd.Series:
@@ -67,7 +70,11 @@ def keltner_channel(high: pd.Series, low: pd.Series, close: pd.Series,
 
 def vwap(high: pd.Series, low: pd.Series, close: pd.Series, volume: pd.Series) -> pd.Series:
     tp = (high + low + close) / 3
-    return (tp * volume).cumsum() / volume.cumsum()
+    vol_cum = volume.cumsum()
+    if volume.sum() == 0:
+        logger.warning("[VWAP] volume is all-zero — falling back to typical-price average (no real volume data)")
+        return tp.expanding().mean()
+    return (tp * volume).cumsum() / vol_cum.replace(0, np.nan)
 
 def supertrend(high: pd.Series, low: pd.Series, close: pd.Series,
                period: int = 7, multiplier: float = 3.0) -> Tuple[pd.Series, pd.Series]:
