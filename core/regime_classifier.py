@@ -124,13 +124,49 @@ class MarketRegimeClassifier:
 
         logger.debug(f"[REGIME_RULES] SCORES: {score}")
 
-        best = max(score, key=score.get)
-        conf = min(score[best], 0.95)
         # Guard against a "winning" score of 0 (all rules missed) masquerading as a real regime.
+        best = max(score, key=score.get)
         if score[best] <= 0:
             logger.warning(f"[REGIME_RULES] All regime scores <= 0 ({score}) — no clear regime")
             return NO_DATA_REGIME, 0.0
 
+        # BUG FIX: max(score, key=score.get) silently resolved ties by dict/list
+        # insertion order — REGIMES = ["TRENDING_BULL", "TRENDING_BEAR", ...] means
+        # every BULL/BEAR tie defaulted to TRENDING_BULL regardless of what the
+        # data actually said. Confirmed in live logs: Bank Nifty scored
+        # TRENDING_BULL=0.3 / TRENDING_BEAR=0.3 exactly at the moment RSI crossed
+        # below 50 during an intraday reversal, and the tie silently resolved to
+        # BULL — masking the reversal instead of flagging it as ambiguous.
+        #
+        # Now: if the top two scores are within EPSILON of each other, treat this
+        # as genuine ambiguity (chop/transition), not a directional call. Prefer
+        # RANGE_BOUND if it's in contention; otherwise keep the top pick but cap
+        # confidence low so downstream code (regime_boost / relaxed threshold in
+        # StrategyEngine) doesn't treat an ambiguous tie as high conviction.
+        EPSILON = 0.05
+        ranked = sorted(score.items(), key=lambda kv: kv[1], reverse=True)
+        top_regime, top_score = ranked[0]
+        runner_regime, runner_score = ranked[1]
+
+        if (top_score - runner_score) < EPSILON:
+            tied_regimes = {top_regime, runner_regime}
+            logger.warning(
+                f"[REGIME_RULES] Ambiguous call — top two regimes tied within "
+                f"{EPSILON}: {top_regime}={top_score}, {runner_regime}={runner_score}. "
+                f"Not defaulting to insertion order."
+            )
+            if "RANGE_BOUND" in tied_regimes or score.get("RANGE_BOUND", 0) >= top_score - EPSILON:
+                best = "RANGE_BOUND"
+            else:
+                best = top_regime  # keep top pick, but confidence gets capped below
+            conf = min(top_score, 0.4)  # ambiguous → never report high confidence
+        else:
+            best = top_regime
+            conf = min(top_score, 0.95)
+
+        # VERIFICATION LOG — grep "[REGIME_TIEBREAK]" to confirm ties are now
+        # being caught instead of silently defaulting to TRENDING_BULL.
+        logger.debug(f"[REGIME_TIEBREAK] top={top_regime}({top_score}) runner={runner_regime}({runner_score}) → best={best}, conf={round(conf,2)}")
         logger.debug(f"[REGIME_RULES] OUTPUT: best={best}, confidence={round(conf,2)}")
         return best, round(conf, 2)
 

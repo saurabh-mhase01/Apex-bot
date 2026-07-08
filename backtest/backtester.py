@@ -253,34 +253,59 @@ class Backtester:
             if entry_price <= 0:
                 continue
 
-            sl = entry_price * (1 - sl_pct)
-            t1 = entry_price * (1 + t1_pct)
-            t2 = entry_price * (1 + t2_pct)
+            # BUG FIX: direction was never applied. SL/T1/T2 were computed as if
+            # every trade was long/CE, and the exit PnL for SL_HIT used a no-op
+            # ternary `(1 if signal == BUY_PE else 1)` — literally always 1. Every
+            # BUY_PE trade was scored as if it were BUY_CE: a real PE win (index
+            # falls) was reported as a loss, and vice versa. Now SL sits on the
+            # correct side of entry for the direction, and PnL is direction-aware.
+            direction = 1 if signal == BUY_CE else -1
 
-            pnl = 0.0
+            if direction == 1:
+                sl = entry_price * (1 - sl_pct)
+                t1 = entry_price * (1 + t1_pct)
+                t2 = entry_price * (1 + t2_pct)
+            else:
+                sl = entry_price * (1 + sl_pct)
+                t1 = entry_price * (1 - t1_pct)
+                t2 = entry_price * (1 - t2_pct)
+
             exit_reason = "TIMEOUT"
             exit_price = future_df["close"].iloc[-1]
 
             for _, candle in future_df.iterrows():
-                if candle["low"] <= sl:
-                    exit_price = sl
-                    pnl = (sl - entry_price) * lot_size * (1 if signal == BUY_PE else 1)
-                    exit_reason = "SL_HIT"
-                    break
-                if candle["high"] >= t2:
-                    exit_price = t2
-                    pnl = (t2 - entry_price) * lot_size
-                    exit_reason = "T2_HIT"
-                    break
-                if candle["high"] >= t1:
-                    exit_price = t1
-                    pnl = (t1 - entry_price) * lot_size
-                    exit_reason = "T1_HIT"
-                    break
+                if direction == 1:
+                    if candle["low"] <= sl:
+                        exit_price, exit_reason = sl, "SL_HIT"
+                        break
+                    if candle["high"] >= t2:
+                        exit_price, exit_reason = t2, "T2_HIT"
+                        break
+                    if candle["high"] >= t1:
+                        exit_price, exit_reason = t1, "T1_HIT"
+                        break
+                else:
+                    if candle["high"] >= sl:
+                        exit_price, exit_reason = sl, "SL_HIT"
+                        break
+                    if candle["low"] <= t2:
+                        exit_price, exit_reason = t2, "T2_HIT"
+                        break
+                    if candle["low"] <= t1:
+                        exit_price, exit_reason = t1, "T1_HIT"
+                        break
 
-            if exit_reason == "TIMEOUT":
-                pnl = (exit_price - entry_price) * lot_size
-
+            pnl = (exit_price - entry_price) * lot_size * direction
+            # VERIFICATION LOG — grep "[BACKTEST_REAL] TRADE" to eyeball that PE
+            # trades have sl above entry / targets below, and pnl sign matches
+            # whether the index actually moved in the trade's favor.
+            signal_type = "CE" if signal == BUY_CE else "PE"
+            logger.info(
+                f"[BACKTEST_REAL] TRADE {signal_type} @ {ts} entry={entry_price:.2f} "
+                f"direction={direction:+d} sl={sl:.2f} t1={t1:.2f} t2={t2:.2f} "
+                f"exit={exit_price:.2f}({exit_reason}) pnl={pnl:+.2f}"
+            )
+            
             capital += pnl
             result.equity_curve.append(capital)
             result.trades.append({
@@ -288,7 +313,7 @@ class Backtester:
                 "entry_price": entry_price,
                 "exit_price": exit_price,
                 "pnl": round(pnl, 2),
-                "pnl_pct": round((exit_price - entry_price) / entry_price * 100, 2),
+                "pnl_pct": round((exit_price - entry_price) / entry_price * 100 * direction, 2),
                 "signal": "CE" if signal == BUY_CE else "PE",
                 "regime": regime,
                 "confidence": score,

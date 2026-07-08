@@ -21,6 +21,7 @@ logger = logging.getLogger("API")
 # Global bot engine reference (set by main.py)
 _engine = None
 _db = None
+_live_event_queue: List[Dict] = []
 
 app = FastAPI(title="AI Options Bot Dashboard", version="1.0", redirect_slashes=False)
 app.add_middleware(
@@ -231,6 +232,16 @@ def run_backtest():
 # ── WebSocket for live updates ────────────────────────────────────────────────
 connected_clients: List[WebSocket] = []
 
+
+def push_live_event(event: Dict):
+    _live_event_queue.append(event)
+    for client in connected_clients:
+        try:
+            client.send_text(json.dumps(event))
+        except Exception as exc:
+            logger.warning(f"[API] Failed to push live event: {exc}")
+
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -246,6 +257,9 @@ async def websocket_endpoint(websocket: WebSocket):
                     "timestamp": str(datetime.now()),
                 }
                 await websocket.send_text(json.dumps(data))
+                while _live_event_queue:
+                    event = _live_event_queue.pop(0)
+                    await websocket.send_text(json.dumps(event))
     except WebSocketDisconnect:
         connected_clients.remove(websocket)
 

@@ -60,6 +60,19 @@ optionsbot/
     └── dashboard_api.py       ← FastAPI REST backend
 ```
 
+## New architecture: DB-backed data engine
+The bot now uses a persistent ingestion layer so candles and market snapshots are stored in SQLite first and reused on subsequent cycles. This removes the old pattern of re-pulling the same data on every signal check and reduces rate-limit pressure.
+
+What changed:
+- Candles are saved into the database as 5m/15m/30m/1h/1d data becomes available.
+- Market snapshots such as VIX and option-chain context are also stored for later reuse.
+- The strategy engine reads from the persisted store whenever possible instead of forcing fresh broker calls for each evaluation.
+
+How to verify:
+```bash
+PYTHONPATH=/workspaces/Apex-bot pytest -q tests/test_data_engine.py
+```
+
 ## Paper Trading First!
 Run paper_trading: true for at least 1 month.
 Only enable auto_trade: true after consistent profitable results.

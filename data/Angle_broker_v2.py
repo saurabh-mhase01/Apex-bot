@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Optional, Dict, List, Tuple
 import pandas as pd
 import requests
+import re
 
 logger = logging.getLogger("ANGELONE")
 
@@ -407,6 +408,73 @@ class AngelOneBroker:
             logger.info("[AUTH] Session expired — re-authenticating...")
             self._authenticate()
 
+    def _normalize_live_message(self, message: Dict) -> Dict:
+        if not isinstance(message, dict):
+            return {}
+        normalized = dict(message)
+        normalized.setdefault("token", normalized.get("token") or normalized.get("symboltoken") or "")
+        normalized.setdefault("ltp", normalized.get("ltp") or normalized.get("last_price"))
+        normalized.setdefault("oi", normalized.get("oi") or normalized.get("open_interest"))
+        normalized.setdefault("bid", normalized.get("bid") or normalized.get("best_bid"))
+        normalized.setdefault("ask", normalized.get("ask") or normalized.get("best_ask"))
+        return normalized
+
+    def start_live_feed(self, tokens: List[Dict], callback=None):
+        if not self.auth_token or not self.feed_token:
+            logger.warning("[WS] Cannot start live feed without auth/feed tokens")
+            return None
+
+        try:
+            from SmartApi.smartWebSocketV2 import SmartWebSocketV2
+
+            def _on_data(wsapp, message):
+                normalized = self._normalize_live_message(message)
+                if normalized:
+                    self.api_logger.log_call("live_feed", {"token": normalized.get("token")}, {"message": normalized})
+                    if callback:
+                        callback(normalized)
+
+            # BUG FIX: SmartWebSocketV2's default on_error/on_close signatures
+            # don't match the number of args the installed websocket-client
+            # version passes to them, which crashed the feed on any
+            # disconnect/error event ("takes 2 positional arguments but 4 were
+            # given"). Override both with permissive (*args) signatures so a
+            # library version mismatch can't crash the callback.
+            def _on_error(wsapp, *args, **kwargs):
+                logger.warning(f"[WS] error: {args[0] if args else 'unknown'}")
+
+            def _on_close(wsapp, *args, **kwargs):
+                logger.info(f"[WS] closed: {args}")
+
+            def _on_open(wsapp):
+                logger.info("[WS] ✅ connected — feed alive")
+            
+            ws = SmartWebSocketV2(self.auth_token, self.api_key, self.client_id, self.feed_token)
+            ws.on_data  = _on_data
+            ws.on_error = _on_error
+            ws.on_close = _on_close
+            ws.on_open  = _on_open
+
+            # The SmartApi library internally calls its own _on_error/_on_close
+            # methods on reconnect and shutdown. We preserve the wrapper
+            # callbacks by assigning them to the instance and also patch the
+            # internal methods so both the library and our code see the
+            # permissive handlers.
+            ws._on_error = _on_error
+            ws._on_close = _on_close
+
+            def _connect_thread():
+                try:
+                    ws.connect()
+                except Exception as exc:
+                    logger.warning(f"[WS] connection thread failed: {exc}")
+
+            threading.Thread(target=_connect_thread, daemon=True, name="angelone-ws").start()
+            return ws
+        except Exception as exc:
+            logger.warning(f"[WS] Live feed init failed: {exc}")
+            return None
+
     # ── Instrument Cache ──────────────────────────────────────────────────────
 
     def _load_instrument_cache(self):
@@ -485,6 +553,66 @@ class AngelOneBroker:
         except Exception as e:
             logger.error(f"[GET_LTP] ERROR [{instrument_key}]: {e}")
             return None
+
+    def get_ohlcv_range(self, instrument_key: str, interval: str = "30minute",
+                        from_date: Optional[datetime] = None,
+                        to_date: Optional[datetime] = None,
+                        use_db_fallback: bool = True) -> pd.DataFrame:
+        logger.info(f"[GET_OHLCV_RANGE] INPUT: instrument_key={instrument_key}, interval={interval}, "
+                    f"from_date={from_date}, to_date={to_date}, use_db_fallback={use_db_fallback}")
+
+        self._ensure_session()
+
+        exchange, symboltoken = self._resolve_for_historical(instrument_key)
+        if not symboltoken:
+            logger.error(f"[GET_OHLCV_RANGE] No historical token for {instrument_key}")
+            if use_db_fallback:
+                cached = self.api_logger.get_cached_candles(instrument_key, interval, 30)
+                logger.warning(f"[GET_OHLCV_RANGE] OUTPUT: DB fallback returned {len(cached)} candles")
+                return cached
+            logger.warning("[GET_OHLCV_RANGE] OUTPUT: empty DataFrame (no token, no fallback)")
+            return pd.DataFrame()
+
+        angel_interval = INTERVAL_MAP.get(interval, "THIRTY_MINUTE")
+        if from_date is None:
+            from_date = datetime.now() - timedelta(days=30)
+        if to_date is None:
+            to_date = datetime.now()
+
+        params = {
+            "exchange": exchange,
+            "symboltoken": symboltoken,
+            "interval": angel_interval,
+            "fromdate": from_date.strftime("%Y-%m-%d %H:%M"),
+            "todate": to_date.strftime("%Y-%m-%d %H:%M"),
+        }
+        logger.info(f"[GET_OHLCV_RANGE] Candle request → {params}")
+        self.rate_limiter.wait("historical")
+        t0 = time.time()
+        resp = with_backoff(self.smart_api.getCandleData, params)
+        latency = int((time.time() - t0) * 1000)
+        self.api_logger.log_call("getCandleData", params, resp, latency_ms=latency)
+        candles = (resp or {}).get("data", []) if resp else []
+
+        if not resp or not resp.get("status") or not candles:
+            logger.error(f"[GET_OHLCV_RANGE] Candle FAILED or empty response: {resp}")
+            if use_db_fallback:
+                cached = self.api_logger.get_cached_candles(instrument_key, interval, 30)
+                if not cached.empty:
+                    logger.warning(f"[GET_OHLCV_RANGE] OUTPUT: DB fallback returned {len(cached)} candles")
+                    return cached
+            logger.warning("[GET_OHLCV_RANGE] OUTPUT: empty DataFrame")
+            return pd.DataFrame()
+
+        saved = self.api_logger.save_candles(instrument_key, symboltoken, interval, candles)
+        logger.info(f"[GET_OHLCV_RANGE] Got {len(candles)} candles, saved {saved} to DB")
+
+        df = pd.DataFrame(candles, columns=["timestamp", "open", "high", "low", "close", "volume"])
+        df["timestamp"] = pd.to_datetime(df["timestamp"])
+        df.set_index("timestamp", inplace=True)
+        df = df.sort_index()
+        df[["open", "high", "low", "close", "volume"]] = df[["open", "high", "low", "close", "volume"]].astype(float)
+        return df
 
     def get_ohlcv(self, instrument_key: str, interval: str = "30minute",
               days: int = 30, use_db_fallback: bool = True) -> pd.DataFrame:
@@ -729,29 +857,53 @@ class AngelOneBroker:
         logger.info(f"[GET_ATM_STRIKE] OUTPUT: {atm} (ltp={ltp}, step={step})")
         return atm
 
+    @staticmethod
+    def _symbol_matches_underlying(symbol: str, underlying: str) -> bool:
+        """
+        True only if `symbol` is actually an instrument on `underlying`, not
+        just a symbol that happens to CONTAIN `underlying` as a substring.
+
+        BUG: the previous check everywhere in this file was `underlying in
+        symbol`. Since "NIFTY" is a literal substring of "BANKNIFTY",
+        "FINNIFTY", and "MIDCPNIFTY", any NIFTY-underlying lookup (lot size,
+        option chain, expiries) was silently matching Bank Nifty / Fin Nifty /
+        Midcp Nifty contracts too — with real money impact (wrong lot size,
+        contaminated option chain). Angel One trading symbols are formatted as
+        "<UNDERLYING><DD><MON><YY><STRIKE><CE|PE>", so the underlying must be
+        an exact PREFIX immediately followed by a two-digit day.
+        """
+        if not symbol.startswith(underlying):
+            return False
+        rest = symbol[len(underlying):]
+        return len(rest) >= 2 and rest[:2].isdigit()
+
     def get_lot_size(self, instrument_key: str) -> Optional[int]:
-        """
-        Reads lot size from the live instrument cache ONLY. Returns None on a
-        cache miss instead of guessing via a hardcoded table — callers
-        (BotEngine._execute_trade / RiskGuard.position_size) MUST treat None
-        as "abort this trade", since a wrong lot size directly changes real
-        position size and capital at risk.
-        """
         logger.info(f"[GET_LOT_SIZE] INPUT: instrument_key={instrument_key}")
         underlying = KEY_TO_UNDERLYING.get(instrument_key, instrument_key)
         self._load_instrument_cache()
 
+        false_positive_examples = []  # REGRESSION CHECK — see log line below
         for _key, inst in _INSTRUMENT_CACHE.items():
             if inst.get("exch_seg") != "NFO":
                 continue
             if inst.get("instrumenttype") not in ("OPTIDX", "OPTSTK"):
                 continue
-            if underlying not in inst.get("symbol", ""):
+            sym = inst.get("symbol", "")
+            if underlying in sym and not self._symbol_matches_underlying(sym, underlying):
+                if len(false_positive_examples) < 3:
+                    false_positive_examples.append(sym)
+            if not self._symbol_matches_underlying(sym, underlying):
                 continue
             try:
                 lotsize = int(inst.get("lotsize", 0))
                 if lotsize > 0:
-                    logger.info(f"[GET_LOT_SIZE] OUTPUT: {lotsize} (from live API cache, underlying={underlying})")
+                    if false_positive_examples:
+                        logger.warning(
+                            f"[GET_LOT_SIZE] REGRESSION_CHECK: old substring logic would have "
+                            f"also matched contracts like {false_positive_examples} for "
+                            f"underlying={underlying} — now correctly excluded"
+                        )
+                    logger.info(f"[GET_LOT_SIZE] OUTPUT: {lotsize} (matched={sym}, underlying={underlying})")
                     return lotsize
             except (ValueError, TypeError):
                 continue
@@ -783,12 +935,16 @@ class AngelOneBroker:
         try:
             underlying = KEY_TO_UNDERLYING.get(instrument_key, instrument_key)
             expiry_set = set()
+            false_positive_count = 0  # REGRESSION CHECK
             for _key, inst in _INSTRUMENT_CACHE.items():
                 if inst.get("exch_seg") != "NFO":
                     continue
                 if inst.get("instrumenttype") not in ("OPTIDX", "OPTSTK"):
                     continue
-                if underlying not in inst.get("symbol", ""):
+                sym = inst.get("symbol", "")
+                if underlying in sym and not self._symbol_matches_underlying(sym, underlying):
+                    false_positive_count += 1
+                if not self._symbol_matches_underlying(sym, underlying):
                     continue
                 exp_raw = inst.get("expiry", "")
                 if not exp_raw:
@@ -798,6 +954,12 @@ class AngelOneBroker:
                     expiry_set.add(dt.strftime("%Y-%m-%d"))
                 except ValueError:
                     pass
+            if false_positive_count:
+                logger.warning(
+                    f"[GET_OPTION_EXPIRIES] REGRESSION_CHECK: excluded {false_positive_count} "
+                    f"cross-index contracts that old substring logic would have matched "
+                    f"for underlying={underlying}"
+                )
             expiries = sorted(expiry_set)
             logger.info(f"[GET_OPTION_EXPIRIES] OUTPUT: {len(expiries)} expiries, next={expiries[0] if expiries else None}")
             return expiries
@@ -869,6 +1031,7 @@ class AngelOneBroker:
         chain_meta:    list = []
         seen_keys:     set  = set()
         matched_format: Optional[str] = None
+        false_positive_examples = []  # REGRESSION CHECK
 
         for _key, inst in _INSTRUMENT_CACHE.items():
             sym = inst.get("symbol", "")
@@ -878,7 +1041,11 @@ class AngelOneBroker:
                 continue
             if not (sym.endswith("CE") or sym.endswith("PE")):
                 continue
-            if underlying not in sym:
+            if underlying in sym and not self._symbol_matches_underlying(sym, underlying):
+                if len(false_positive_examples) < 5:
+                    false_positive_examples.append(sym)
+                continue
+            if not self._symbol_matches_underlying(sym, underlying):
                 continue
             sym_upper = sym.upper()
             if not any(fmt in sym_upper for fmt in expiry_formats):
@@ -905,6 +1072,14 @@ class AngelOneBroker:
                 "ltp":            0.0,
                 "oi":             0,
             })
+
+        if false_positive_examples:
+            logger.warning(
+                f"[GET_OPTION_CHAIN] REGRESSION_CHECK: excluded contracts like "
+                f"{false_positive_examples} that old substring logic would have "
+                f"mixed into the {underlying} chain"
+            )
+
 
         if not chain_meta:
             logger.error(f"[GET_OPTION_CHAIN] OUTPUT: 0 contracts for {underlying} expiry={expiry}")

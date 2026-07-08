@@ -137,6 +137,26 @@ export default function App() {
     loadDashboard();
   }, []);
 
+  useEffect(() => {
+    const ws = new WebSocket(`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/ws`);
+
+    ws.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload?.type === "signal") {
+          setSignals((prev) => [
+            { ...payload.data, id: payload.data.timestamp || Date.now() },
+            ...prev,
+          ].slice(0, 50));
+        }
+      } catch (err) {
+        console.error("WebSocket parse error", err);
+      }
+    };
+
+    return () => ws.close();
+  }, []);
+
   const loadDashboard = async () => {
     try {
       const [

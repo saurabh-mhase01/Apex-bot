@@ -14,9 +14,11 @@ from core.regime_classifier import MarketRegimeClassifier, NO_DATA_REGIME
 from core.risk_guard import RiskGuard
 from backtest import Backtester
 from data.Angle_broker_v2 import AngelOneBroker
+from data.data_engine import DataEngine
 from strategies.strategy_engine import StrategyEngine, BUY_CE, BUY_PE, NO_TRADE
 from db.database import Database
 from alerts.telegram_alert import TelegramAlerter
+import pandas as pd
 
 logger = logging.getLogger("ENGINE")
 
@@ -27,22 +29,18 @@ NON_TRADEABLE_REGIMES = {NO_DATA_REGIME}
 
 
 class BotEngine:
-    def __init__(self, config: Config, db: Database, alerter: TelegramAlerter):
+    def __init__(self, config: Config, db: Database, alerter: TelegramAlerter, market_data):
         self.config = config
         self.db     = db
         self.alerter = alerter
         self._tf_cache: Dict[str, Tuple[datetime, pd.DataFrame]] = {}
 
-        self.broker             = AngelOneBroker(
-            db_path=config.db_path,
-            api_key=config.angleone_api_key or None,
-            client_id=config.angleone_client_id or None,
-            password=config.angleone_password or None,
-            totp_secret=config.angleone_totp_secret or None,
-        )
+        self.market_data        = market_data
+        self.broker              = market_data.broker
         self.regime_classifier  = MarketRegimeClassifier()
         self.strategy_engine    = StrategyEngine(config.strategy_weights)
         self.risk_guard         = RiskGuard(config, db)
+        self.data_engine        = market_data.data_engine 
 
         # Start in the "no data yet" state rather than pretending we already
         # know the regime is RANGE_BOUND with 50% confidence — that fake
@@ -53,6 +51,8 @@ class BotEngine:
         self.capital            = config.total_capital
         self._oi_snapshot_prev: Dict = {}
         self._bot_active = True
+        
+        
 
         saved_weights = db.get_setting("strategy_weights")
         if saved_weights:
@@ -68,14 +68,35 @@ class BotEngine:
         cached = self._tf_cache.get(key)
         if cached and (datetime.now() - cached[0]).total_seconds() < ttl_minutes * 60:
             return cached[1]
-        df = self.broker.get_ohlcv(instrument_key, interval, days=days)
+
+        df = self.data_engine.get_candles_with_live_bar(instrument_key, interval, limit=500)
+        if df.empty:
+            logger.info(f"[DATA_ENGINE] No cached candles for {instrument_key}/{interval}; fetching from broker")
+            df = self.market_data.get_ohlcv(instrument_key, interval, days=days)
+            if not df.empty:
+                self.data_engine.save_candles(
+                    instrument_key,
+                    interval,
+                    [
+                        {
+                            "timestamp": idx,
+                            "open": row.get("open", 0.0),
+                            "high": row.get("high", 0.0),
+                            "low": row.get("low", 0.0),
+                            "close": row.get("close", 0.0),
+                            "volume": row.get("volume", 0.0),
+                            "source": "live",
+                        }
+                        for idx, row in df.iterrows()
+                    ],
+                )
         self._tf_cache[key] = (datetime.now(), df)
         return df
     # ── Lifecycle ─────────────────────────────────────────────────────────────
     def pre_market_analysis(self):
         logger.info("🌅 [PRE_MARKET] INPUT: (none)")
         try:
-            vix = self.broker.get_india_vix()
+            vix = self.market_data.get_vix()
             logger.info(f"[PRE_MARKET] Live VIX fetch returned: {vix}")
             if vix is None:
                 logger.error("[PRE_MARKET] VIX fetch returned None — NOT seeding a fake VIX into DB")
@@ -94,13 +115,13 @@ class BotEngine:
         for instrument_key in self.config.instruments:
             try:
                 logger.info(f"[REGIME_CYCLE] Fetching 30-minute OHLCV for {instrument_key} (10 days)...")
-                df = self.broker.get_ohlcv(instrument_key, "30minute", days=10)
+                df = self._get_ohlcv_cached(instrument_key, "30minute", 10, ttl_minutes=5)
                 if df.empty:
                     logger.warning(f"[REGIME_CYCLE] No data for {instrument_key} — skipping (NOT defaulting to a regime)")
                     continue
                 logger.info(f"[REGIME_CYCLE] Got {len(df)} candles for {instrument_key}")
 
-                vix = self.broker.get_india_vix()
+                vix = self.market_data.get_vix()
                 logger.info(f"[REGIME_CYCLE] Live VIX for {instrument_key}: {vix}")
                 if vix is None:
                     logger.error(f"[REGIME_CYCLE] VIX unavailable — skipping regime classification for {instrument_key}")
@@ -157,7 +178,7 @@ class BotEngine:
         logger.info(f"[EVAL] INPUT: instrument={instrument_key}")
 
         # ── 1. OHLCV candle data ──────────────────────────────────────────────
-        df = self.broker.get_ohlcv(instrument_key, "15minute", days=3)
+        df = self._get_ohlcv_cached(instrument_key, "15minute", 3, ttl_minutes=5)
         if df is None or len(df) < 20:
             logger.warning(f"[EVAL] {instrument_key}: insufficient candles "
                             f"({len(df) if df is not None else 0}/20) — aborting eval")
@@ -166,7 +187,7 @@ class BotEngine:
 
         df_5m = df_1h = df_1d = None
         try:
-            df_5m = self.broker.get_ohlcv(instrument_key, "5minute", days=2)
+            df_5m = self._get_ohlcv_cached(instrument_key, "5minute", 2, ttl_minutes=2)
         except Exception as e:
             logger.warning(f"[EVAL] {instrument_key}: 5m fetch failed: {e}")
         try:
@@ -179,7 +200,9 @@ class BotEngine:
             logger.warning(f"[EVAL] {instrument_key}: 1D fetch failed: {e}")
 
         # ── 2. India VIX — REQUIRED, no fake fallback ──────────────────────────
-        live_vix = self.broker.get_india_vix()
+        live_vix = self.market_data.get_vix()
+        if live_vix is not None:
+            self.data_engine.save_market_snapshot(instrument_key, "vix", {"value": live_vix, "source": "live"})
         if live_vix is None:
             logger.error(f"[EVAL] {instrument_key}: live VIX fetch failed — aborting eval "
                          f"(refusing to substitute a fake VIX=15.0)")
@@ -199,7 +222,7 @@ class BotEngine:
         self.db.set_setting("today_vix", live_vix)
 
         # ── 3. Expiries ───────────────────────────────────────────────────────
-        expiries = self.broker.get_option_expiries(instrument_key)
+        expiries = self.market_data.get_option_expiries(instrument_key)
         expiry   = expiries[0] if expiries else None
         if not expiry:
             logger.error(f"[EVAL] {instrument_key}: no available expiries — aborting eval")
@@ -216,8 +239,13 @@ class BotEngine:
         logger.info(f"[EVAL] {instrument_key}: DTE={dte}")
 
         # ── 4. Option chain ──────────────────────────────────────────────────
-        chain_result = self.broker.get_option_chain(instrument_key, expiry)
+        chain_result = self.market_data.get_option_chain(instrument_key, expiry)
+        # BUG FIX: get_option_chain() always returns a 2-tuple (even the empty
+        # case is `([], 0)`), so `if chain_result:` was always truthy — an empty
+        # chain still logged a snapshot. Check the actual list instead.
         chain_list, atm = chain_result
+        if chain_list:
+            self.data_engine.save_market_snapshot(instrument_key, "option_chain", {"expiry": expiry, "atm": atm, "contracts": len(chain_list)})
         if not chain_list or not atm:
             logger.error(f"[EVAL] {instrument_key}: empty option chain or ATM=0 — aborting eval")
             return
@@ -267,6 +295,21 @@ class BotEngine:
             "regime":      self.active_regime,
             "confidence":  score,
         })
+        try:
+            from api.dashboard_api import push_live_event
+            push_live_event({
+                "type": "signal",
+                "data": {
+                    "instrument": instrument_key,
+                    "signal_type": signal_type,
+                    "score": score,
+                    "regime": self.active_regime,
+                    "strategies": strategies_summary,
+                    "timestamp": str(datetime.now()),
+                },
+            })
+        except Exception as exc:
+            logger.warning(f"[EVAL] Could not push live signal event: {exc}")
 
         # ── 8. Execute ────────────────────────────────────────────────────────
         if signal == NO_TRADE:
@@ -302,7 +345,7 @@ class BotEngine:
             return
         logger.info(f"[TRADE] Resolved option instrument: {opt_key}")
 
-        premium = self.broker.get_ltp(opt_key)
+        premium = self.market_data.get_ltp(opt_key) 
         if not premium:
             logger.error(f"[TRADE] {opt_key}: could not fetch live premium — aborting trade")
             return
@@ -327,7 +370,7 @@ class BotEngine:
             return
         logger.info(f"[TRADE] levels={levels}")
 
-        order = self.broker.place_order(opt_key, qty, transaction_type="BUY")
+        order = self.market_data.place_order(opt_key, qty, transaction_type="BUY")
         if not order or not order.get("order_id"):
             logger.error(f"[TRADE] Order placement failed: {order}")
             return
@@ -336,7 +379,7 @@ class BotEngine:
         trade_id         = str(uuid.uuid4())[:8].upper()
         strategies_voted = [k for k, v in details.items() if v["signal"] == signal]
 
-        current_vix = self.broker.get_india_vix()
+        current_vix = self.market_data.get_vix()
         trade = {
             "trade_id":          trade_id,
             "instrument":        instrument_key,
@@ -391,7 +434,7 @@ class BotEngine:
                 if not opt_key:
                     logger.warning(f"[MID_DAY_REVIEW] {trade['trade_id']}: could not resolve option instrument — skipping")
                     continue
-                current  = self.broker.get_ltp(opt_key)
+                current  = self.market_data.get_ltp(opt_key)
                 if not current:
                     logger.warning(f"[MID_DAY_REVIEW] {trade['trade_id']}: LTP fetch failed — skipping")
                     continue
@@ -419,7 +462,7 @@ class BotEngine:
                     trade["instrument"], trade["strike"],
                     trade["option_type"], trade["expiry"]
                 )
-                current = self.broker.get_ltp(opt_key) if opt_key else None
+                current = self.market_data.get_ltp(opt_key) if opt_key else None
                 if not current:
                     logger.warning(f"[PRE_CLOSE_REVIEW] {trade['trade_id']}: LTP unavailable — skipping")
                     continue
@@ -439,7 +482,7 @@ class BotEngine:
                     trade["instrument"], trade["strike"],
                     trade["option_type"], trade["expiry"]
                 )
-                current = self.broker.get_ltp(opt_key) if opt_key else None
+                current = self.market_data.get_ltp(opt_key) if opt_key else None
                 if current is None:
                     logger.error(
                         f"[FORCE_EXIT] {trade['trade_id']}: could not fetch live LTP — "
@@ -461,7 +504,7 @@ class BotEngine:
                 trade["option_type"], trade["expiry"]
             )
             if opt_key:
-                self.broker.place_order(opt_key, trade["qty"], transaction_type="SELL")
+                self.market_data.place_order(opt_key, trade["qty"], transaction_type="SELL")
         self.db.update_trade(trade["trade_id"], {
             "exit_price": exit_price, "exit_time": str(datetime.now()),
             "pnl": round(pnl, 2), "pnl_pct": round(pnl_pct, 2),
@@ -514,7 +557,7 @@ class BotEngine:
         
         bt = Backtester(initial_capital=self.capital)
         result = bt.run_real(
-            broker=self.broker,
+            broker=self.market_data,
             strategy_engine=self.strategy_engine,
             instrument_key=instrument_key,
             days=days,
@@ -547,7 +590,7 @@ class BotEngine:
             trade["instrument"], trade["strike"],
             trade["option_type"], trade["expiry"]
         )
-        price = self.broker.get_ltp(opt_key) if opt_key else None
+        price = self.market_data.get_ltp(opt_key) if opt_key else None
         if price is None:
             logger.error(f"[MANUAL_EXIT] {trade_id}: could not fetch live LTP — aborting manual exit")
             return {"error": "Could not fetch live price — exit aborted, close manually if urgent"}

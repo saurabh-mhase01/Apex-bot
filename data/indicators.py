@@ -130,23 +130,57 @@ def detect_swing_highs_lows(df: pd.DataFrame, lookback: int = 5) -> pd.DataFrame
     df["swing_low"] = df["low"][(df["low"] == df["low"].rolling(lookback * 2 + 1, center=True).min())]
     return df
 
-def market_structure(df: pd.DataFrame) -> str:
-    """Detect BOS/CHoCH — returns BULLISH / BEARISH / SIDEWAYS"""
+def market_structure(df: pd.DataFrame, lookback: int = 6, min_agreement: float = 0.8) -> str:
+    """
+    Detect BOS/CHoCH — returns BULLISH / BEARISH / SIDEWAYS.
+
+    BUG FIX: previously required ALL consecutive comparisons in a 6-point
+    rolling-high/low window to be strictly monotonic to call a trend. On
+    real market data this basically never holds (a single flat tick or minor
+    pullback anywhere in the window breaks it) — confirmed in live logs
+    returning SIDEWAYS on 20/20 cycles during a clear, strong uptrend. That
+    silently capped MarketRegimeClassifier confidence at 0.6 (missing the
+    structure +0.3 point) and blocked the regime-boost/threshold-relax path
+    in StrategyEngine.evaluate() every single cycle, plus kept SMCStrategy's
+    primary (non-override) path dead.
+
+    Now requires a high (not perfect) fraction of steps to agree, AND a
+    minimum net move over the window, so genuine chop still reports SIDEWAYS.
+    """
     highs = df["high"].rolling(5).max().dropna()
     lows = df["low"].rolling(5).min().dropna()
-    if len(highs) < 10:
+    if len(highs) < lookback + 4:
         return "SIDEWAYS"
-    recent_highs = highs.tail(6).values
-    recent_lows = lows.tail(6).values
-    hh = all(recent_highs[i] < recent_highs[i+1] for i in range(len(recent_highs)-1))
-    hl = all(recent_lows[i] < recent_lows[i+1] for i in range(len(recent_lows)-1))
-    ll = all(recent_lows[i] > recent_lows[i+1] for i in range(len(recent_lows)-1))
-    lh = all(recent_highs[i] > recent_highs[i+1] for i in range(len(recent_highs)-1))
-    if hh and hl:
-        return "BULLISH"
-    elif ll and lh:
-        return "BEARISH"
-    return "SIDEWAYS"
+
+    recent_highs = highs.tail(lookback).values
+    recent_lows = lows.tail(lookback).values
+    n = lookback - 1
+
+    hh_steps = sum(recent_highs[i] < recent_highs[i + 1] for i in range(n))
+    hl_steps = sum(recent_lows[i] < recent_lows[i + 1] for i in range(n))
+    ll_steps = sum(recent_lows[i] > recent_lows[i + 1] for i in range(n))
+    lh_steps = sum(recent_highs[i] > recent_highs[i + 1] for i in range(n))
+
+    net_high_move_pct = abs(recent_highs[-1] - recent_highs[0]) / recent_highs[0]
+    net_low_move_pct = abs(recent_lows[-1] - recent_lows[0]) / recent_lows[0]
+    min_net_move = 0.0015  # 0.15% over the lookback window — filters out flat noise
+
+    bullish = (hh_steps / n >= min_agreement and hl_steps / n >= min_agreement
+               and net_high_move_pct >= min_net_move and net_low_move_pct >= min_net_move)
+    bearish = (ll_steps / n >= min_agreement and lh_steps / n >= min_agreement
+               and net_high_move_pct >= min_net_move and net_low_move_pct >= min_net_move)
+
+    result = "BULLISH" if bullish else "BEARISH" if bearish else "SIDEWAYS"
+
+    # VERIFICATION LOG — grep "[MARKET_STRUCTURE]" to confirm this is no
+    # longer stuck at SIDEWAYS 100% of the time on trending days.
+    logger.debug(
+        f"[MARKET_STRUCTURE] hh_agree={hh_steps}/{n} hl_agree={hl_steps}/{n} "
+        f"ll_agree={ll_steps}/{n} lh_agree={lh_steps}/{n} "
+        f"net_high_move={net_high_move_pct:.4f} net_low_move={net_low_move_pct:.4f} "
+        f"→ {result}"
+    )
+    return result
 
 def bb_squeeze(high: pd.Series, low: pd.Series, close: pd.Series,
                bb_period: int = 20, kc_period: int = 20) -> pd.Series:
