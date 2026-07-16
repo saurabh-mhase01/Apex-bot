@@ -165,10 +165,11 @@ def market_structure(df: pd.DataFrame, lookback: int = 6, min_agreement: float =
     net_low_move_pct = abs(recent_lows[-1] - recent_lows[0]) / recent_lows[0]
     min_net_move = 0.0015  # 0.15% over the lookback window — filters out flat noise
 
-    bullish = (hh_steps / n >= min_agreement and hl_steps / n >= min_agreement
-               and net_high_move_pct >= min_net_move and net_low_move_pct >= min_net_move)
-    bearish = (ll_steps / n >= min_agreement and lh_steps / n >= min_agreement
-               and net_high_move_pct >= min_net_move and net_low_move_pct >= min_net_move)
+    EPS = 1e-9
+    bullish = (hh_steps / n >= min_agreement - EPS and hl_steps / n >= min_agreement - EPS
+               and net_high_move_pct >= min_net_move - EPS and net_low_move_pct >= min_net_move - EPS)
+    bearish = (ll_steps / n >= min_agreement - EPS and lh_steps / n >= min_agreement - EPS
+               and net_high_move_pct >= min_net_move - EPS and net_low_move_pct >= min_net_move - EPS)
 
     result = "BULLISH" if bullish else "BEARISH" if bearish else "SIDEWAYS"
 

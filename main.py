@@ -268,6 +268,35 @@ def today_str():
     return datetime.now().strftime("%Y-%m-%d")
 
 
+# class Scheduled:
+#     """A single periodic action that runs on the actual market clock."""
+#     def __init__(self, name: str, times: list[str], fn, active_hours_only: bool = True):
+#         self.name = name
+#         self.times = times
+#         self.fn = fn
+#         self.active_hours_only = active_hours_only
+#         self._last_run_date: str | None = None
+
+#     def maybe_run(self, now_dt: datetime, market_open: bool):
+#         if self.active_hours_only and not market_open:
+#             return
+
+#         current_day = now_dt.strftime("%Y-%m-%d")
+#         current_time = now_dt.strftime("%H:%M")
+#         if current_day == self._last_run_date and current_time not in self.times:
+#             return
+#         if current_time not in self.times:
+#             self._last_run_date = None
+#             return
+#         if current_day == self._last_run_date:
+#             return
+
+#         self._last_run_date = current_day
+#         try:
+#             self.fn()
+#         except Exception as e:
+#             logger.error(f"[SCHEDULE] {self.name} raised: {e}", exc_info=True)
+
 class Scheduled:
     """A single periodic action that runs on the actual market clock."""
     def __init__(self, name: str, times: list[str], fn, active_hours_only: bool = True):
@@ -275,23 +304,28 @@ class Scheduled:
         self.times = times
         self.fn = fn
         self.active_hours_only = active_hours_only
-        self._last_run_date: str | None = None
+        self._last_fired_slot: str | None = None  # "YYYY-MM-DD HH:MM" of last successful run
 
     def maybe_run(self, now_dt: datetime, market_open: bool):
         if self.active_hours_only and not market_open:
             return
 
-        current_day = now_dt.strftime("%Y-%m-%d")
         current_time = now_dt.strftime("%H:%M")
-        if current_day == self._last_run_date and current_time not in self.times:
-            return
         if current_time not in self.times:
-            self._last_run_date = None
-            return
-        if current_day == self._last_run_date:
             return
 
-        self._last_run_date = current_day
+        # BUG FIX: old version tracked only the DATE of the last run, so
+        # `if current_day == self._last_run_date: return` blocked every
+        # later time-of-day match for the rest of the session, not just
+        # duplicate calls within the same minute. Confirmed in logs:
+        # check_signals fired once at 10:20, then never again. Now keyed
+        # on the exact (date, HH:MM) slot, so re-firing is only blocked
+        # within the same minute across the ~5s poll loop.
+        slot = now_dt.strftime("%Y-%m-%d %H:%M")
+        if slot == self._last_fired_slot:
+            return
+
+        self._last_fired_slot = slot
         try:
             self.fn()
         except Exception as e:
@@ -325,9 +359,10 @@ class OptionsBot:
 
         regime_times = build_clock_times(dtime(9, 15), dtime(15, 25), 15)
         signal_times = build_clock_times(dtime(9, 15), dtime(15, 25), 5)
+        backfill_times = build_clock_times(dtime(9, 15), dtime(15, 25), 5)
 
         self._jobs = [
-            Scheduled("backfill_candles", [now.strftime("%H:%M") for now in []], self._backfill_all, active_hours_only=False),
+            Scheduled("backfill_candles", backfill_times, self._backfill_all, active_hours_only=True),
             Scheduled("compute_regime", regime_times, self.engine.compute_daily_regime),
             Scheduled("check_signals", signal_times, self.engine.check_signals),
             Scheduled("mid_day_review", ["13:00"], self._maybe_mid_day_review, active_hours_only=False),

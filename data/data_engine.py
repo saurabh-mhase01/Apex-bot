@@ -97,14 +97,47 @@ class DataEngine:
             )
         return len(rows)
 
+    # def get_candles(self, instrument: str, interval: str, limit: Optional[int] = None) -> pd.DataFrame:
+    #     query = "SELECT timestamp, open, high, low, close, volume FROM market_data_candles WHERE instrument=? AND interval=?"
+    #     params: List[Any] = [instrument, interval]
+    #     if limit is not None:
+    #         query += " ORDER BY timestamp ASC LIMIT ?"
+    #         params.append(limit)
+    #     else:
+    #         query += " ORDER BY timestamp ASC"
+
+    #     with self.db._conn() as conn:
+    #         rows = conn.execute(query, params).fetchall()
+
+    #     if not rows:
+    #         return pd.DataFrame(columns=["open", "high", "low", "close", "volume"])
+
+    #     df = pd.DataFrame([dict(r) for r in rows])
+    #     df["timestamp"] = pd.to_datetime(df["timestamp"])
+    #     df.set_index("timestamp", inplace=True)
+    #     df = df.astype({"open": "float64", "high": "float64", "low": "float64", "close": "float64", "volume": "float64"})
+    #     return df
     def get_candles(self, instrument: str, interval: str, limit: Optional[int] = None) -> pd.DataFrame:
-        query = "SELECT timestamp, open, high, low, close, volume FROM market_data_candles WHERE instrument=? AND interval=?"
-        params: List[Any] = [instrument, interval]
         if limit is not None:
-            query += " ORDER BY timestamp ASC LIMIT ?"
-            params.append(limit)
+            # BUG FIX: `ORDER BY timestamp ASC LIMIT N` returns the OLDEST N
+            # rows once the table has more than N total rows — not the most
+            # recent N. Confirmed in logs: close/RSI/EMA/structure stayed
+            # bit-identical across 90+ minutes and multiple restarts even
+            # after backfill was confirmed fetching and saving fresh candles,
+            # because those new rows never fell inside the ASC+LIMIT window.
+            # Grab the most recent N by ordering DESC, then reverse back to
+            # chronological order before returning.
+            query = (
+                "SELECT timestamp, open, high, low, close, volume FROM market_data_candles "
+                "WHERE instrument=? AND interval=? ORDER BY timestamp DESC LIMIT ?"
+            )
+            params: List[Any] = [instrument, interval, limit]
         else:
-            query += " ORDER BY timestamp ASC"
+            query = (
+                "SELECT timestamp, open, high, low, close, volume FROM market_data_candles "
+                "WHERE instrument=? AND interval=? ORDER BY timestamp ASC"
+            )
+            params = [instrument, interval]
 
         with self.db._conn() as conn:
             rows = conn.execute(query, params).fetchall()
@@ -113,11 +146,13 @@ class DataEngine:
             return pd.DataFrame(columns=["open", "high", "low", "close", "volume"])
 
         df = pd.DataFrame([dict(r) for r in rows])
+        if limit is not None:
+            df = df.iloc[::-1].reset_index(drop=True)  # DESC → chronological order
         df["timestamp"] = pd.to_datetime(df["timestamp"])
         df.set_index("timestamp", inplace=True)
         df = df.astype({"open": "float64", "high": "float64", "low": "float64", "close": "float64", "volume": "float64"})
         return df
-
+        
     def get_candles_with_live_bar(self, instrument: str, interval: str, limit: Optional[int] = None, timestamp: Optional[datetime] = None) -> pd.DataFrame:
         df = self.get_candles(instrument, interval, limit=limit)
         if df.empty:

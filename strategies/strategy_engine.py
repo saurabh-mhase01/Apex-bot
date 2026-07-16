@@ -201,6 +201,50 @@ class GreeksStrategy(BaseStrategy):
             return NO_TRADE, 0, str(e)
 
 
+# class FibSRStrategy(BaseStrategy):
+#     name = "fib_sr"
+
+#     def signal(self, df: pd.DataFrame, **kwargs) -> Tuple[int, float, str]:
+#         logger.info(f"[FIB_SR] INPUT: candles={len(df) if df is not None else 0}")
+#         if len(df) < 20:
+#             logger.info("[FIB_SR] OUTPUT: NO_TRADE (insufficient data)")
+#             return NO_TRADE, 0, "Insufficient data"
+#         try:
+#             period_high = df["high"].tail(20).max()
+#             period_low  = df["low"].tail(20).min()
+#             fibs        = fibonacci_levels(period_high, period_low)
+#             close       = df["close"].iloc[-1]
+#             rsi_val     = rsi(df["close"]).iloc[-1]
+#             prev        = df.tail(2).iloc[0]
+#             pivots      = pivot_points(prev["high"], prev["low"], prev["close"])
+
+#             fib_zones     = [fibs["0.382"], fibs["0.5"], fibs["0.618"]]
+#             support_zones = [pivots["s1"], pivots["s2"], pivots["pp"]]
+#             resist_zones  = [pivots["r1"], pivots["r2"]]
+
+#             def near(price, level, pct=0.002):
+#                 return abs(price - level) / level < pct
+
+#             at_fib_support = any(near(close, z) for z in fib_zones if z < close * 1.003)
+#             at_fib_resist  = any(near(close, z) for z in fib_zones if z > close * 0.997)
+#             at_support     = any(near(close, z) for z in support_zones)
+#             at_resist      = any(near(close, z) for z in resist_zones)
+
+#             logger.info(f"[FIB_SR] FEATURES: close={close:.2f}, rsi={rsi_val:.1f}, "
+#                         f"at_fib_support={at_fib_support}, at_fib_resist={at_fib_resist}, "
+#                         f"at_support={at_support}, at_resist={at_resist}")
+
+#             if (at_fib_support or at_support) and rsi_val < 45:
+#                 logger.info("[FIB_SR] OUTPUT: BUY_CE conf=0.68")
+#                 return BUY_CE, 0.68, f"Fib/SR support confluence, RSI {rsi_val:.0f}"
+#             if (at_fib_resist or at_resist) and rsi_val > 55:
+#                 logger.info("[FIB_SR] OUTPUT: BUY_PE conf=0.68")
+#                 return BUY_PE, 0.68, f"Fib/SR resistance confluence, RSI {rsi_val:.0f}"
+#             logger.info("[FIB_SR] OUTPUT: NO_TRADE (no setup)")
+#             return NO_TRADE, 0, "No Fib/SR setup"
+#         except Exception as e:
+#             logger.error(f"[FIB_SR] ERROR: {e}")
+#             return NO_TRADE, 0, str(e)
 class FibSRStrategy(BaseStrategy):
     name = "fib_sr"
 
@@ -215,8 +259,19 @@ class FibSRStrategy(BaseStrategy):
             fibs        = fibonacci_levels(period_high, period_low)
             close       = df["close"].iloc[-1]
             rsi_val     = rsi(df["close"]).iloc[-1]
-            prev        = df.tail(2).iloc[0]
-            pivots      = pivot_points(prev["high"], prev["low"], prev["close"])
+
+            # BUG FIX: previously used df.tail(2).iloc[0] — the previous
+            # 15-MIN CANDLE, not the previous trading day — so pivots were
+            # always clustered right next to current price (confirmed: all
+            # 4 flags True on every cycle, both instruments, two different
+            # price levels). Aggregate to real daily OHLC and use the last
+            # completed day.
+            daily = df.groupby(df.index.date).agg(high=("high", "max"), low=("low", "min"), close=("close", "last"))
+            if len(daily) < 2:
+                logger.info("[FIB_SR] OUTPUT: NO_TRADE (insufficient daily history for pivots)")
+                return NO_TRADE, 0, "Insufficient daily history for pivots"
+            prev_day = daily.iloc[-2]
+            pivots = pivot_points(prev_day["high"], prev_day["low"], prev_day["close"])
 
             fib_zones     = [fibs["0.382"], fibs["0.5"], fibs["0.618"]]
             support_zones = [pivots["s1"], pivots["s2"], pivots["pp"]]
@@ -225,10 +280,15 @@ class FibSRStrategy(BaseStrategy):
             def near(price, level, pct=0.002):
                 return abs(price - level) / level < pct
 
-            at_fib_support = any(near(close, z) for z in fib_zones if z < close * 1.003)
-            at_fib_resist  = any(near(close, z) for z in fib_zones if z > close * 0.997)
-            at_support     = any(near(close, z) for z in support_zones)
-            at_resist      = any(near(close, z) for z in resist_zones)
+            # BUG FIX: the close*1.003/0.997 padding was WIDER than the
+            # near() check it gated, so it never excluded anything — any
+            # level within the near-band passed BOTH the support and
+            # resistance filters at once. Gate on the level's actual side
+            # of price instead.
+            at_fib_support = any(near(close, z) for z in fib_zones if z <= close)
+            at_fib_resist  = any(near(close, z) for z in fib_zones if z >= close)
+            at_support     = any(near(close, z) for z in support_zones if z <= close)
+            at_resist      = any(near(close, z) for z in resist_zones if z >= close)
 
             logger.info(f"[FIB_SR] FEATURES: close={close:.2f}, rsi={rsi_val:.1f}, "
                         f"at_fib_support={at_fib_support}, at_fib_resist={at_fib_resist}, "
@@ -520,18 +580,187 @@ class GammaScalpStrategy(BaseStrategy):
 
 # ── Strategy Engine ────────────────────────────────────────────────────────────
 
+# class StrategyEngine:
+#     """
+#     Regime-aware voting threshold.
+#     When the regime classifier is confident (≥70%), lower min_strategies_agree
+#     from 3 to 2 so the bot can act on high-conviction market conditions even
+#     when data-limited strategies (oi_flow, mtf) can't contribute.
+
+#     Also adds a regime_boost: in a strong trending regime, a direction that
+#     matches the regime gets +0.15 score so it clears the 0.38 floor more easily.
+#     """
+
+#     TRENDING_REGIMES = {"TRENDING_BULL", "TRENDING_BEAR"}
+
+#     def __init__(self, weights: Dict[str, float] = None):
+#         self.strategies: List[BaseStrategy] = [
+#             SMCStrategy(), ORBStrategy(), GreeksStrategy(), FibSRStrategy(),
+#             VIXStrategy(), OIFlowStrategy(), IVSkewStrategy(), BBSqueezeStrategy(),
+#             MTFConfluenceStrategy(), PsychLevelStrategy(), GammaScalpStrategy(),
+#         ]
+#         self.weights = weights or {
+#             s.name: 1.0 / len(self.strategies) for s in self.strategies
+#         }
+
+#         # ── Validate weights cover every active strategy, and nothing else ──
+#         strategy_names = {s.name for s in self.strategies}
+#         configured_names = set(self.weights.keys())
+
+#         missing = strategy_names - configured_names
+#         if missing:
+#             logger.error(
+#                 f"[STRATEGY_ENGINE_INIT] Missing weights for active strategies: {missing} "
+#                 f"— these are silently getting a 0.1 fallback. Add them to config.yaml."
+#             )
+
+#         orphaned = configured_names - strategy_names
+#         if orphaned:
+#             logger.warning(
+#                 f"[STRATEGY_ENGINE_INIT] strategy_weights has entries with no matching "
+#                 f"strategy (dead weight, contributes nothing): {orphaned}"
+#             )
+
+#         total = sum(self.weights.get(s.name, 0.1) for s in self.strategies)
+#         if abs(total - 1.0) > 0.01:
+#             logger.warning(
+#                 f"[STRATEGY_ENGINE_INIT] Effective weights sum to {total:.3f}, not 1.0 "
+#                 f"— min_score comparisons will be skewed."
+#             )
+
+#         self.min_strategies_agree = 3
+#         self.min_strategies_agree_relaxed = 2
+#         self.min_score = 0.38
+#         logger.info(f"[STRATEGY_ENGINE_INIT] weights={self.weights}")
+
+#     def evaluate(self, df: pd.DataFrame, context: Dict, regime: str,
+#                  regime_confidence: float) -> Tuple[int, float, Dict]:
+#         """
+#         regime and regime_confidence are REQUIRED — no defaults.
+#         Previously regime_confidence silently defaulted to 0.5 whenever the
+#         caller forgot to pass it, meaning the regime-based threshold relax
+#         and score boost NEVER activated even in a genuinely high-confidence
+#         trending regime, and you'd have no idea from the logs. Now the caller
+#         (BotEngine) must explicitly pass the real, just-computed regime
+#         confidence on every call.
+#         """
+#         logger.info(
+#             f"[STRATEGY_EVALUATE] INPUT: candles={len(df) if df is not None else 0}, "
+#             f"regime={regime}, regime_confidence={regime_confidence}, "
+#             f"context_keys={list(context.keys()) if context else []}"
+#         )
+#         context = context or {}
+#         results = {}
+
+#         for strategy in self.strategies:
+#             try:
+#                 sig, conf, reason = strategy.signal(df=df, **context)
+#                 results[strategy.name] = {
+#                     "signal":     sig,
+#                     "confidence": conf,
+#                     "reason":     reason,
+#                     "weight":     self.weights.get(strategy.name, 0.1),
+#                 }
+#             except Exception as e:
+#                 # A strategy missing a required market-data kwarg lands here —
+#                 # that is the intended safe path, not a bug to silence.
+#                 logger.warning(f"[STRATEGY_EVALUATE] {strategy.name} raised, treating as NO_TRADE: {e}")
+#                 results[strategy.name] = {
+#                     "signal": NO_TRADE, "confidence": 0,
+#                     "reason": f"error: {e}", "weight": 0,
+#                 }
+
+#         bull_score = sum(
+#             r["confidence"] * r["weight"]
+#             for r in results.values() if r["signal"] == BUY_CE
+#         )
+#         bear_score = sum(
+#             r["confidence"] * r["weight"]
+#             for r in results.values() if r["signal"] == BUY_PE
+#         )
+#         bull_votes = sum(1 for r in results.values() if r["signal"] == BUY_CE)
+#         bear_votes = sum(1 for r in results.values() if r["signal"] == BUY_PE)
+
+#         is_trending    = regime in self.TRENDING_REGIMES
+#         high_confidence = regime_confidence >= 0.70
+#         threshold = (self.min_strategies_agree_relaxed
+#                      if (is_trending and high_confidence)
+#                      else self.min_strategies_agree)
+
+#         regime_boost = 0.15 if (is_trending and high_confidence) else 0.0
+
+#         final_signal = NO_TRADE
+#         final_score  = 0.0
+
+#         bull_boosted = bull_score + (regime_boost if regime == "TRENDING_BULL" else 0)
+#         bear_boosted = bear_score + (regime_boost if regime == "TRENDING_BEAR" else 0)
+
+#         if bull_votes >= threshold and bull_boosted >= self.min_score:
+#             if bull_boosted > bear_boosted:
+#                 final_signal = BUY_CE
+#                 final_score  = bull_boosted
+
+#         if bear_votes >= threshold and bear_boosted >= self.min_score:
+#             if bear_boosted > bull_boosted:
+#                 final_signal = BUY_PE
+#                 final_score  = bear_boosted
+
+#         logger.info(
+#             f"[STRATEGY_EVALUATE] OUTPUT: CE={bull_votes}votes({bull_score:.2f}+{regime_boost:.2f}boost) "
+#             f"PE={bear_votes}votes({bear_score:.2f}+{regime_boost:.2f}boost) "
+#             f"threshold={threshold} regime={regime}({regime_confidence:.0%}) → "
+#             f"{'BUY_CE' if final_signal==1 else 'BUY_PE' if final_signal==-1 else 'NO_TRADE'} "
+#             f"score={round(final_score,3)}"
+#         )
+#         return final_signal, round(final_score, 3), results
+
+#     def update_weights(self, performance: Dict[str, float]):
+#         logger.info(f"[STRATEGY_UPDATE_WEIGHTS] INPUT: {performance}")
+#         total = sum(performance.values()) or 1
+#         for name, win_rate in performance.items():
+#             self.weights[name] = round(win_rate / total, 4)
+#         logger.info(f"[STRATEGY_UPDATE_WEIGHTS] OUTPUT: {self.weights}") 
+
 class StrategyEngine:
     """
-    Regime-aware voting threshold.
-    When the regime classifier is confident (≥70%), lower min_strategies_agree
-    from 3 to 2 so the bot can act on high-conviction market conditions even
-    when data-limited strategies (oi_flow, mtf) can't contribute.
+    Regime-aware voting threshold — continuous version.
 
-    Also adds a regime_boost: in a strong trending regime, a direction that
-    matches the regime gets +0.15 score so it clears the 0.38 floor more easily.
+    BUG FIX / UPGRADE: previously min_strategies_agree and regime_boost were
+    driven by a BINARY gate — `regime_confidence >= 0.70` flipped threshold
+    3→2 and boost 0.0→0.15 in one step, with nothing happening on either side
+    of that line. A regime at 0.69 confidence got zero relaxation; a regime
+    at 0.71 got full relaxation — a cliff, not a signal. It also had no
+    behavior at all for RANGE_BOUND: a market the classifier is CONFIDENTLY
+    calling sideways got the same threshold as one it's unsure about, even
+    though a confidently-ranging day is exactly when you want to demand MORE
+    strategy agreement before trading against/within the chop.
+
+    Now both trending relaxation and range-bound tightening scale
+    continuously with regime_confidence via _dynamic_threshold_and_boost():
+      - TRENDING_BULL/BEAR: threshold ramps 3→2 and boost ramps 0.0→0.15
+        continuously across confidence 0.50→0.85 (fully relaxed by 0.85,
+        fully cautious at/below 0.50). The vote threshold itself is
+        necessarily an integer, so it still "snaps" — but it snaps around
+        ~0.675 confidence instead of the old hard-coded 0.70, and the boost
+        (which IS continuous) means score-based conviction still scales
+        smoothly even between the two integer vote thresholds.
+      - RANGE_BOUND: threshold ramps 3→4 continuously across confidence
+        0.60→0.90 (tightening the bar as sideways conviction increases), no
+        boost.
+      - HIGH_VOLATILITY / PRE_EVENT / low-confidence RANGE_BOUND: unchanged,
+        threshold=3, boost=0.0.
     """
 
     TRENDING_REGIMES = {"TRENDING_BULL", "TRENDING_BEAR"}
+
+    # Confidence bands for the continuous ramps. Named constants so the
+    # ramp shape is visible/tunable in one place instead of buried in the
+    # interpolation math.
+    TREND_RELAX_LOW  = 0.50   # at/below this: no relaxation (threshold=3, boost=0.0)
+    TREND_RELAX_HIGH = 0.85   # at/above this: full relaxation (threshold=2, boost=0.15)
+    RANGE_TIGHTEN_LOW  = 0.60   # at/below this: no tightening (threshold=3)
+    RANGE_TIGHTEN_HIGH = 0.90   # at/above this: full tightening (threshold=4)
+    MAX_REGIME_BOOST = 0.15
 
     def __init__(self, weights: Dict[str, float] = None):
         self.strategies: List[BaseStrategy] = [
@@ -570,8 +799,54 @@ class StrategyEngine:
 
         self.min_strategies_agree = 3
         self.min_strategies_agree_relaxed = 2
+        self.min_strategies_agree_tight = 4
         self.min_score = 0.38
         logger.info(f"[STRATEGY_ENGINE_INIT] weights={self.weights}")
+
+    def _dynamic_threshold_and_boost(self, regime: str, regime_confidence: float) -> Tuple[int, float]:
+        """
+        Continuous mapping from (regime, regime_confidence) to
+        (min_strategies_agree, regime_boost). See class docstring for the
+        ramp shape. Returns integers/floats ready to use directly in
+        evaluate() — no further clamping needed by the caller.
+        """
+        conf = max(0.0, min(regime_confidence, 0.95))  # classifier never reports above 0.95
+
+        if regime in self.TRENDING_REGIMES:
+            if conf <= self.TREND_RELAX_LOW:
+                frac = 0.0
+            elif conf >= self.TREND_RELAX_HIGH:
+                frac = 1.0
+            else:
+                frac = (conf - self.TREND_RELAX_LOW) / (self.TREND_RELAX_HIGH - self.TREND_RELAX_LOW)
+
+            # Threshold: integer, so it snaps — but continuously-derived snap
+            # point (~0.675) rather than a hard-coded literal.
+            threshold = round(
+                self.min_strategies_agree
+                - frac * (self.min_strategies_agree - self.min_strategies_agree_relaxed)
+            )
+            # Boost: genuinely continuous, this is what carries the signal
+            # between the two integer threshold values.
+            boost = round(frac * self.MAX_REGIME_BOOST, 3)
+            return threshold, boost
+
+        if regime == "RANGE_BOUND":
+            if conf <= self.RANGE_TIGHTEN_LOW:
+                frac = 0.0
+            elif conf >= self.RANGE_TIGHTEN_HIGH:
+                frac = 1.0
+            else:
+                frac = (conf - self.RANGE_TIGHTEN_LOW) / (self.RANGE_TIGHTEN_HIGH - self.RANGE_TIGHTEN_LOW)
+
+            threshold = round(
+                self.min_strategies_agree
+                + frac * (self.min_strategies_agree_tight - self.min_strategies_agree)
+            )
+            return threshold, 0.0
+
+        # HIGH_VOLATILITY, PRE_EVENT, or anything unmapped — unchanged.
+        return self.min_strategies_agree, 0.0
 
     def evaluate(self, df: pd.DataFrame, context: Dict, regime: str,
                  regime_confidence: float) -> Tuple[int, float, Dict]:
@@ -621,13 +896,7 @@ class StrategyEngine:
         bull_votes = sum(1 for r in results.values() if r["signal"] == BUY_CE)
         bear_votes = sum(1 for r in results.values() if r["signal"] == BUY_PE)
 
-        is_trending    = regime in self.TRENDING_REGIMES
-        high_confidence = regime_confidence >= 0.70
-        threshold = (self.min_strategies_agree_relaxed
-                     if (is_trending and high_confidence)
-                     else self.min_strategies_agree)
-
-        regime_boost = 0.15 if (is_trending and high_confidence) else 0.0
+        threshold, regime_boost = self._dynamic_threshold_and_boost(regime, regime_confidence)
 
         final_signal = NO_TRADE
         final_score  = 0.0
@@ -648,7 +917,7 @@ class StrategyEngine:
         logger.info(
             f"[STRATEGY_EVALUATE] OUTPUT: CE={bull_votes}votes({bull_score:.2f}+{regime_boost:.2f}boost) "
             f"PE={bear_votes}votes({bear_score:.2f}+{regime_boost:.2f}boost) "
-            f"threshold={threshold} regime={regime}({regime_confidence:.0%}) → "
+            f"threshold={threshold}(dynamic) regime={regime}({regime_confidence:.0%}) → "
             f"{'BUY_CE' if final_signal==1 else 'BUY_PE' if final_signal==-1 else 'NO_TRADE'} "
             f"score={round(final_score,3)}"
         )
